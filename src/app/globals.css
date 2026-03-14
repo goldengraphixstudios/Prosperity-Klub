@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+:root {
+  --color-brand-primary: #1a3679;
+  --color-brand-secondary: #94a6cf;
+  --color-brand-gold: #b38124;
+  --color-brand-text: #2b2b2b;
+  --color-brand-background: #f5f6fa;
+  --color-brand-muted: #5f6b7f;
+  --radius: 0.75rem;
+}
+
+@theme inline {
+  --color-brand-primary: var(--color-brand-primary);
+  --color-brand-secondary: var(--color-brand-secondary);
+  --color-brand-gold: var(--color-brand-gold);
+  --color-brand-text: var(--color-brand-text);
+  --color-brand-background: var(--color-brand-background);
+  --color-brand-muted: var(--color-brand-muted);
+  --radius: var(--radius);
+  --font-heading: var(--font-heading);
+  --font-body: var(--font-body);
+}
+
+* {
+  border-color: color-mix(in oklab, var(--color-brand-primary) 20%, transparent);
+}
+
+html {
+  scroll-padding-top: 84px;
+  scroll-behavior: auto;
+}
+
+body {
+  background: var(--color-brand-background);
+  color: var(--color-brand-text);
+  font-family: var(--font-body), system-ui, sans-serif;
+  letter-spacing: -0.01em;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-heading), "Times New Roman", serif;
+  letter-spacing: -0.02em;
+}
+
+p {
+  line-height: 1.7;
+}
+
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+.animate-accordion-down {
+  animation: accordion-down 0.2s ease-out;
+}
+
+.animate-accordion-up {
+  animation: accordion-up 0.2s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Lenis smooth scrolling hooks */
+html.lenis {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth body {
+  overscroll-behavior: none;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
