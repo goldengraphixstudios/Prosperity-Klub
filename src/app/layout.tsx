@@ -7,6 +7,7 @@ import { Footer } from "@/components/footer";
 import { Navbar } from "@/components/navbar";
 import { PageTransition } from "@/components/motion";
 import { SmoothScrollProvider } from "@/components/smooth-scroll-provider";
+import { withBasePath } from "@/lib/utils";
 
 const headingFont = Playfair_Display({
   subsets: ["latin"],
@@ -28,7 +29,7 @@ export const metadata: Metadata = {
   description:
     "Prosperity Klub is a financial growth community under International Marketing Group (IMG), helping Filipinos build protection, wealth, and diversified income opportunities.",
   icons: {
-    icon: "/brand/logo-update.png",
+    icon: withBasePath("/brand/logo-update.png"),
   },
 };
 

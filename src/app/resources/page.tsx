@@ -12,8 +12,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { resourceLinks } from "@/lib/site";
+import { withBasePath } from "@/lib/utils";
 
-const ebookCoverUrl = "/resources/coverebook.png";
+const ebookCoverUrl = withBasePath("/resources/coverebook.png");
 const ebookTitle = "The Secret to Saving and Building Your Future";
 
 export default function ResourcesPage() {

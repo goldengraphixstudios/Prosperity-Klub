@@ -11,6 +11,7 @@ import {
   guidedNotSoldLine,
   positioningLine,
 } from "@/lib/site";
+import { withBasePath } from "@/lib/utils";
 
 const timeline = [
   {
@@ -62,7 +63,7 @@ export default function AboutPage() {
             <div className="grid gap-0 xl:grid-cols-[0.92fr_1.08fr]">
               <div className="relative min-h-[640px] bg-gradient-to-br from-brand-primary to-[#223f88]">
                 <Image
-                  src="/brand/founder.png"
+                  src={withBasePath("/brand/founder.png")}
                   alt="Philip Ian Ymbong, founder and financial education mentor"
                   fill
                   className="object-cover object-top"
@@ -201,7 +202,7 @@ export default function AboutPage() {
             <Card className="overflow-hidden border-brand-primary/10 bg-white/80">
               <div className="relative aspect-[16/10]">
                 <Image
-                  src="/brand/about-finance-planning.jpg"
+                  src={withBasePath("/brand/about-finance-planning.jpg")}
                   alt="Financial planning documents and strategy discussion on a desk"
                   fill
                   className="object-cover"
@@ -329,7 +330,7 @@ export default function AboutPage() {
 
         <FadeIn className="flex items-center justify-center rounded-3xl border border-brand-primary/10 bg-white/80 p-8">
           <Image
-            src="/brand/logo-update.png"
+            src={withBasePath("/brand/logo-update.png")}
             alt="Prosperity Klub logo"
             width={220}
             height={80}

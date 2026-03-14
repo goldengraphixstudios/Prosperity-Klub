@@ -30,6 +30,7 @@ import {
   successStories,
   successStoriesPlaylistUrl,
 } from "@/lib/success-stories";
+import { withBasePath } from "@/lib/utils";
 
 const steps = [
   {
@@ -144,7 +145,7 @@ export default function HomePage() {
                 <div className="grid gap-4 sm:grid-cols-[0.42fr_0.58fr]">
                   <div className="relative min-h-[12rem] overflow-hidden sm:min-h-full">
                     <Image
-                      src="/resources/coverebook.png"
+                      src={withBasePath("/resources/coverebook.png")}
                       alt="Free Prosperity Klub ebook cover"
                       fill
                       className="object-cover object-top"
@@ -205,7 +206,7 @@ export default function HomePage() {
                 <div className="relative overflow-hidden rounded-[1.7rem] border border-white/60">
                   <div className="relative aspect-[4/4.7] overflow-hidden">
                     <Image
-                      src="/brand/about-finance-planning.jpg"
+                      src={withBasePath("/brand/about-finance-planning.jpg")}
                       alt="Filipino financial planning conversation at a desk"
                       fill
                       priority
@@ -246,7 +247,7 @@ export default function HomePage() {
                   <div className="flex items-center gap-3">
                     <div className="relative h-14 w-14 overflow-hidden rounded-2xl border border-brand-primary/10">
                       <Image
-                        src="/brand/founder.png"
+                        src={withBasePath("/brand/founder.png")}
                         alt="Founder of Prosperity Klub"
                         fill
                         className="object-cover"
@@ -508,7 +509,7 @@ export default function HomePage() {
               <FadeIn className="grid gap-4 md:grid-cols-[1.08fr_0.92fr]">
                 <div className="relative min-h-[18rem] overflow-hidden rounded-[1.75rem] border border-brand-primary/10 shadow-[0_18px_35px_rgba(15,23,42,0.08)]">
                   <Image
-                    src="/brand/how-it-works-advisor.jpg"
+                    src={withBasePath("/brand/how-it-works-advisor.jpg")}
                     alt="Advisor walking a client through financial next steps"
                     fill
                     className="object-cover"
@@ -526,7 +527,7 @@ export default function HomePage() {
 
                 <div className="relative min-h-[18rem] overflow-hidden rounded-[1.75rem] border border-brand-primary/10 bg-white shadow-[0_18px_35px_rgba(15,23,42,0.08)]">
                   <Image
-                    src="/brand/founder.png"
+                    src={withBasePath("/brand/founder.png")}
                     alt="Founder portrait of Prosperity Klub"
                     fill
                     className="object-cover object-top"

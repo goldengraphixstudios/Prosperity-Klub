@@ -17,6 +17,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { guidedNotSoldLine } from "@/lib/site";
+import { withBasePath } from "@/lib/utils";
 
 const coreJourney = [
   {
@@ -102,7 +103,7 @@ export default function HowItWorksPage() {
             <div className="grid gap-0 lg:grid-cols-[1.05fr_0.95fr]">
               <div className="relative min-h-[320px]">
                 <Image
-                  src="/brand/how-it-works-advisor.jpg"
+                  src={withBasePath("/brand/how-it-works-advisor.jpg")}
                   alt="Advisor discussing a financial plan with a client"
                   fill
                   className="object-cover"

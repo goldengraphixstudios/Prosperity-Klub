@@ -5,10 +5,11 @@ import { FadeIn, Stagger, StaggerItem } from "@/components/motion";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { guidedNotSoldLine, positioningLine } from "@/lib/site";
+import { withBasePath } from "@/lib/utils";
 
 const partners = [
   {
-    logoSrc: "/partners/img-logo.png",
+    logoSrc: withBasePath("/partners/img-logo.png"),
     logoAlt: "IMG logo",
     title: "International Marketing Group",
     type: "Execution Infrastructure",
@@ -17,7 +18,7 @@ const partners = [
     note: "Core infrastructure partner behind the Prosperity Klub pathway.",
   },
   {
-    logoSrc: "/partners/kaiser.png",
+    logoSrc: withBasePath("/partners/kaiser.png"),
     logoAlt: "Kaiser logo",
     title: "Kaiser International Healthgroup",
     type: "Partner Provider",
@@ -26,7 +27,7 @@ const partners = [
     note: "Used when the fit is right for protection and health-related priorities.",
   },
   {
-    logoSrc: "/partners/manilabankers.png",
+    logoSrc: withBasePath("/partners/manilabankers.png"),
     logoAlt: "Manila Bankers logo",
     title: "Manila Bankers",
     type: "Partner Provider",
@@ -35,7 +36,7 @@ const partners = [
     note: "A provider option within the broader trusted-institutions network.",
   },
   {
-    logoSrc: "/partners/bolt.png",
+    logoSrc: withBasePath("/partners/bolt.png"),
     logoAlt: "Bolt Assurance logo",
     title: "Bolt Assurance",
     type: "Affiliate / Strategic Access",

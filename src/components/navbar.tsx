@@ -20,6 +20,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { guidedNotSoldLine, siteConfig } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { withBasePath } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -141,7 +142,7 @@ export function Navbar() {
       <div className="mx-auto flex h-14 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-3">
           <Image
-            src="/brand/logo-update.png"
+            src={withBasePath("/brand/logo-update.png")}
             alt="Prosperity Klub"
             width={96}
             height={30}
