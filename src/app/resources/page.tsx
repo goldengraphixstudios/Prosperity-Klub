@@ -3,7 +3,7 @@
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Lock, MailCheck, ShieldCheck } from "lucide-react";
+import { MailCheck } from "lucide-react";
 
 import { Container } from "@/components/container";
 import { FadeIn } from "@/components/motion";
@@ -57,19 +57,6 @@ export default function ResourcesPage() {
                 priority
               />
               <div className="absolute inset-0 bg-gradient-to-t from-brand-primary/55 via-transparent to-transparent" />
-              <div className="absolute left-5 top-5 flex items-center gap-2 rounded-full border border-white/25 bg-brand-primary/80 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.22em] text-white backdrop-blur">
-                <Lock className="h-3.5 w-3.5" />
-                Preview Only
-              </div>
-              <div className="absolute inset-x-5 bottom-5 rounded-2xl border border-white/20 bg-white/92 p-4 shadow-lg backdrop-blur">
-                <p className="text-sm font-semibold text-brand-primary">
-                  The live preview is intentionally locked.
-                </p>
-                <p className="mt-2 text-sm text-brand-muted">
-                  This cover lets visitors see the resource without exposing the PDF
-                  file publicly on the site.
-                </p>
-              </div>
             </div>
           </Card>
 
@@ -89,7 +76,7 @@ export default function ResourcesPage() {
                 Build a confident money plan with a guided roadmap covering the
                 essentials: protection, savings discipline, and long-term growth.
               </p>
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3">
                 <div className="rounded-2xl border border-brand-primary/10 bg-brand-background/70 p-4">
                   <div className="flex items-center gap-2 text-sm font-semibold text-brand-primary">
                     <MailCheck className="h-4 w-4" />
@@ -97,15 +84,6 @@ export default function ResourcesPage() {
                   </div>
                   <p className="mt-2 text-sm text-brand-muted">
                     Submit the short form and we can send the full ebook privately.
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-brand-primary/10 bg-brand-background/70 p-4">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-brand-primary">
-                    <ShieldCheck className="h-4 w-4" />
-                    Protected resource flow
-                  </div>
-                  <p className="mt-2 text-sm text-brand-muted">
-                    The downloadable PDF is no longer exposed on the public website.
                   </p>
                 </div>
               </div>
