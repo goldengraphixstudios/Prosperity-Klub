@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 export function ResourceGateDialog({
   open,
@@ -37,20 +38,37 @@ export function ResourceGateDialog({
 
     setSubmitting(true);
     try {
-      const response = await fetch("/api/leads", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const supabase = getSupabaseBrowserClient();
+
+      if (supabase) {
+        const { error: supabaseError } = await supabase.from("ebook_requests").insert({
           name,
           email,
           source_page: "/resources",
           requested_resource: "The Secret to Saving and Building Your Future",
-          priorities: [],
-        }),
-      });
+          status: "pending",
+          delivery_method: "email",
+        });
 
-      if (!response.ok) {
-        throw new Error("Unable to submit. Please try again.");
+        if (supabaseError) {
+          throw new Error(supabaseError.message);
+        }
+      } else {
+        const response = await fetch("/api/leads", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name,
+            email,
+            source_page: "/resources",
+            requested_resource: "The Secret to Saving and Building Your Future",
+            priorities: [],
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Unable to submit. Please try again.");
+        }
       }
 
       onSubmitted();

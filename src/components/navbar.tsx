@@ -6,6 +6,7 @@ import Link from "next/link";
 import {
   CalendarDays,
   ChevronDown,
+  ChevronRight,
   Globe,
   Mail,
   Menu,
@@ -37,16 +38,36 @@ import {
 export function Navbar() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = React.useState(false);
-  const [calcOpen, setCalcOpen] = React.useState(false);
+  const [resourcesOpen, setResourcesOpen] = React.useState(false);
+  const [activeResourcePanel, setActiveResourcePanel] = React.useState<
+    "tools" | "ecosystem"
+  >("tools");
   const [joinOpen, setJoinOpen] = React.useState(false);
   const [scrolled, setScrolled] = React.useState(false);
-  const calcRef = React.useRef<HTMLDivElement>(null);
+  const resourcesRef = React.useRef<HTMLDivElement>(null);
   const joinRef = React.useRef<HTMLDivElement>(null);
 
   const calculators = [
     { label: "Debt Strategies Calculator", href: "/debt-strategies" },
     { label: "Savings Calculator", href: "/savings-calculator" },
   ];
+  const ecosystemLinks = [
+    { label: "Partners", href: "/partners" },
+    { label: "Provider Links", href: "/links" },
+  ];
+  const resourcePanels = {
+    tools: {
+      label: "Tools",
+      links: calculators,
+    },
+    ecosystem: {
+      label: "Ecosystem",
+      links: ecosystemLinks,
+    },
+  } as const;
+  const primaryNav = siteConfig.nav.filter(
+    (item) => item.label !== "Resources" && item.label !== "Membership"
+  );
   const joinLinks = [
     {
       label: "Book Free Financial Clarity Session",
@@ -83,16 +104,17 @@ export function Navbar() {
 
   React.useEffect(() => {
     setMenuOpen(false);
-    setCalcOpen(false);
+    setResourcesOpen(false);
+    setActiveResourcePanel("tools");
     setJoinOpen(false);
   }, [pathname]);
 
   React.useEffect(() => {
-    if (!calcOpen && !joinOpen) return;
+    if (!resourcesOpen && !joinOpen) return;
     const handleClick = (event: MouseEvent) => {
       const target = event.target as Node;
-      if (calcRef.current && !calcRef.current.contains(target)) {
-        setCalcOpen(false);
+      if (resourcesRef.current && !resourcesRef.current.contains(target)) {
+        setResourcesOpen(false);
       }
       if (joinRef.current && !joinRef.current.contains(target)) {
         setJoinOpen(false);
@@ -100,7 +122,7 @@ export function Navbar() {
     };
     const handleKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setCalcOpen(false);
+        setResourcesOpen(false);
         setJoinOpen(false);
       }
     };
@@ -110,7 +132,7 @@ export function Navbar() {
       document.removeEventListener("mousedown", handleClick);
       document.removeEventListener("keydown", handleKey);
     };
-  }, [calcOpen, joinOpen]);
+  }, [resourcesOpen, joinOpen]);
 
   React.useEffect(() => {
     const handleScroll = () => {
@@ -121,13 +143,19 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const isCalculatorActive =
-    pathname.startsWith("/debt-strategies") || pathname.startsWith("/savings-calculator");
+  const isResourcesActive =
+    pathname.startsWith("/resources") ||
+    pathname.startsWith("/debt-strategies") ||
+    pathname.startsWith("/savings-calculator") ||
+    pathname.startsWith("/partners") ||
+    pathname.startsWith("/links") ||
+    pathname.startsWith("/membership");
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
     return pathname.startsWith(href);
   };
+  const currentResourcePanel = resourcePanels[activeResourcePanel];
 
   const linkBase =
     "relative text-sm font-medium text-brand-muted transition-colors hover:text-brand-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/50 focus-visible:ring-offset-2 after:absolute after:-bottom-2 after:left-0 after:h-[2px] after:w-full after:origin-left after:scale-x-0 after:bg-brand-gold after:transition-transform after:duration-300 hover:after:scale-x-100";
@@ -151,7 +179,7 @@ export function Navbar() {
         </Link>
 
         <nav className="hidden items-center gap-5 md:flex">
-          {siteConfig.nav.map((item) => (
+          {primaryNav.map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -163,51 +191,116 @@ export function Navbar() {
               {item.label}
             </Link>
           ))}
-          <div className="relative" ref={calcRef}>
+          <div
+            className="relative"
+            ref={resourcesRef}
+            onMouseEnter={() => {
+              setResourcesOpen(true);
+            }}
+            onMouseLeave={() => {
+              setResourcesOpen(false);
+              setActiveResourcePanel("tools");
+            }}
+          >
             <button
               type="button"
               className={cn(
                 linkBase,
                 "flex items-center gap-1.5",
-                isCalculatorActive && "text-brand-primary after:scale-x-100"
+                isResourcesActive && "text-brand-primary after:scale-x-100"
               )}
               aria-haspopup="menu"
-              aria-expanded={calcOpen}
+              aria-expanded={resourcesOpen}
               onClick={() => {
-                setCalcOpen((prev) => !prev);
+                setResourcesOpen((prev) => !prev);
+                setActiveResourcePanel("tools");
                 setJoinOpen(false);
               }}
             >
-              Calculators
+              Resources
               <ChevronDown
                 className={cn(
                   "h-4 w-4 transition-transform",
-                  calcOpen && "rotate-180"
+                  resourcesOpen && "rotate-180"
                 )}
               />
             </button>
             <AnimatePresence>
-              {calcOpen && (
+              {resourcesOpen && (
                 <motion.div
                   initial={{ opacity: 0, y: -6, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -6, scale: 0.98 }}
                   transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-                  className="absolute left-0 mt-2 w-64 rounded-xl border border-brand-primary/10 bg-white/95 p-2 shadow-[0_20px_40px_rgba(15,23,42,0.12)]"
+                  className="absolute left-0 mt-2 grid w-[32rem] grid-cols-[220px_1fr] overflow-hidden rounded-2xl border border-brand-primary/10 bg-white/95 shadow-[0_20px_40px_rgba(15,23,42,0.12)]"
                 >
-                  {calculators.map((calc) => (
-                    <Link
-                      key={calc.href}
-                      href={calc.href}
-                      className={cn(
-                        "flex w-full items-center rounded-lg px-3 py-2 text-sm text-brand-muted transition-colors hover:bg-brand-primary/5 hover:text-brand-primary",
-                        pathname.startsWith(calc.href) &&
-                          "bg-brand-primary/10 text-brand-primary font-semibold"
-                      )}
-                    >
-                      {calc.label}
-                    </Link>
-                  ))}
+                  <div className="border-r border-brand-primary/10 bg-brand-primary/[0.03] p-3">
+                    <div className="flex flex-col gap-2">
+                      {(["tools", "ecosystem"] as const).map((key) => (
+                        <button
+                          key={key}
+                          type="button"
+                          onMouseEnter={() => setActiveResourcePanel(key)}
+                          onFocus={() => setActiveResourcePanel(key)}
+                          onClick={() => setActiveResourcePanel(key)}
+                          className={cn(
+                            "flex items-center justify-between rounded-xl px-3 py-3 text-left text-sm font-semibold transition-colors",
+                            activeResourcePanel === key
+                              ? "bg-brand-primary text-white"
+                              : "bg-white text-brand-primary hover:bg-brand-primary/5"
+                          )}
+                        >
+                          {resourcePanels[key].label}
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                      ))}
+                      <Link
+                        href="/resources"
+                        className={cn(
+                          "rounded-xl px-3 py-3 text-sm font-semibold transition-colors",
+                          pathname.startsWith("/resources")
+                            ? "bg-brand-gold text-white"
+                            : "bg-brand-gold/10 text-brand-gold hover:bg-brand-gold hover:text-white"
+                        )}
+                      >
+                        Free Ebook
+                      </Link>
+                      <Link
+                        href="/membership"
+                        className={cn(
+                          "rounded-xl px-3 py-3 text-sm font-semibold transition-colors",
+                          pathname.startsWith("/membership")
+                            ? "bg-brand-gold text-white"
+                            : "bg-brand-gold/10 text-brand-gold hover:bg-brand-gold hover:text-white"
+                        )}
+                      >
+                        Membership
+                      </Link>
+                    </div>
+                  </div>
+                  <div className="p-3">
+                    <div className="rounded-2xl border border-brand-primary/10 bg-white p-3">
+                      <p className="px-1 text-xs font-semibold uppercase tracking-[0.28em] text-brand-secondary">
+                        {currentResourcePanel.label}
+                      </p>
+                      <div className="mt-3 flex flex-col gap-2">
+                        {currentResourcePanel.links.map((link) => (
+                          <Link
+                            key={link.href}
+                            href={link.href}
+                            className={cn(
+                              "flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium text-brand-muted transition-colors hover:bg-brand-primary/5 hover:text-brand-primary",
+                              pathname.startsWith(link.href) &&
+                                "bg-brand-primary/10 font-semibold text-brand-primary"
+                            )}
+                          >
+                            {link.label}
+                            <ChevronRight className="h-4 w-4" />
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -220,7 +313,7 @@ export function Navbar() {
               aria-expanded={joinOpen}
               onClick={() => {
                 setJoinOpen((prev) => !prev);
-                setCalcOpen(false);
+                setResourcesOpen(false);
               }}
             >
               Connect
@@ -310,7 +403,7 @@ export function Navbar() {
             </button>
           </DialogHeader>
           <div className="mt-6 flex flex-col gap-4">
-            {siteConfig.nav.map((item) => (
+            {primaryNav.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -326,27 +419,87 @@ export function Navbar() {
             <Accordion
               type="single"
               collapsible
-              defaultValue={isCalculatorActive ? "calculators" : undefined}
+              defaultValue={isResourcesActive ? "resources" : undefined}
             >
-              <AccordionItem value="calculators" className="border-none">
+              <AccordionItem value="resources" className="border-none">
                 <AccordionTrigger className="px-3 py-2 text-sm font-semibold text-brand-primary">
-                  Calculators
+                  Resources
                 </AccordionTrigger>
                 <AccordionContent>
-                  <div className="flex flex-col gap-2 pt-2">
-                    {calculators.map((calc) => (
-                      <Link
-                        key={calc.href}
-                        href={calc.href}
-                        className={cn(
-                          "rounded-lg px-3 py-2 text-sm text-brand-muted transition-colors hover:bg-brand-primary/5 hover:text-brand-primary",
-                          pathname.startsWith(calc.href) &&
-                            "bg-brand-primary/10 text-brand-primary font-semibold"
-                        )}
+                  <div className="flex flex-col gap-3 pt-2">
+                    <Accordion type="single" collapsible>
+                      <AccordionItem value="tools" className="rounded-2xl border border-brand-primary/10 px-2">
+                        <AccordionTrigger className="px-3 py-3 text-sm font-semibold text-brand-primary">
+                          Tools
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="flex flex-col gap-2 pb-2">
+                            {calculators.map((link) => (
+                              <Link
+                                key={link.href}
+                                href={link.href}
+                                className={cn(
+                                  "rounded-lg px-3 py-2 text-sm text-brand-muted transition-colors hover:bg-brand-primary/5 hover:text-brand-primary",
+                                  pathname.startsWith(link.href) &&
+                                    "bg-brand-primary/10 font-semibold text-brand-primary"
+                                )}
+                              >
+                                {link.label}
+                              </Link>
+                            ))}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                    <Accordion type="single" collapsible>
+                      <AccordionItem
+                        value="ecosystem"
+                        className="rounded-2xl border border-brand-primary/10 px-2"
                       >
-                        {calc.label}
-                      </Link>
-                    ))}
+                        <AccordionTrigger className="px-3 py-3 text-sm font-semibold text-brand-primary">
+                          Ecosystem
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="flex flex-col gap-2 pb-2">
+                            {ecosystemLinks.map((link) => (
+                              <Link
+                                key={link.href}
+                                href={link.href}
+                                className={cn(
+                                  "rounded-lg px-3 py-2 text-sm text-brand-muted transition-colors hover:bg-brand-primary/5 hover:text-brand-primary",
+                                  pathname.startsWith(link.href) &&
+                                    "bg-brand-primary/10 font-semibold text-brand-primary"
+                                )}
+                              >
+                                {link.label}
+                              </Link>
+                            ))}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                    <Link
+                      href="/resources"
+                      className={cn(
+                        "rounded-xl px-3 py-3 text-sm font-semibold transition-colors",
+                        pathname.startsWith("/resources")
+                          ? "bg-brand-gold text-white"
+                          : "bg-brand-gold/10 text-brand-gold hover:bg-brand-gold hover:text-white"
+                      )}
+                    >
+                      Free Ebook
+                    </Link>
+                    <Link
+                      href="/membership"
+                      className={cn(
+                        "rounded-xl px-3 py-3 text-sm font-semibold transition-colors",
+                        pathname.startsWith("/membership")
+                          ? "bg-brand-gold text-white"
+                          : "bg-brand-gold/10 text-brand-gold hover:bg-brand-gold hover:text-white"
+                      )}
+                    >
+                      Membership
+                    </Link>
                   </div>
                 </AccordionContent>
               </AccordionItem>

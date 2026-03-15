@@ -7,8 +7,6 @@ export const siteConfig = {
     { label: "About", href: "/about" },
     { label: "How It Works", href: "/how-it-works" },
     { label: "Resources", href: "/resources" },
-    { label: "Links", href: "/links" },
-    { label: "Partners", href: "/partners" },
     { label: "Membership", href: "/membership" },
     { label: "Contact", href: "/contact" },
   ],
@@ -16,8 +14,8 @@ export const siteConfig = {
     { label: "About", href: "/about" },
     { label: "How It Works", href: "/how-it-works" },
     { label: "Resources", href: "/resources" },
-    { label: "Links", href: "/links" },
-    { label: "Partners", href: "/partners" },
+    { label: "Tools", href: "/links" },
+    { label: "Ecosystem", href: "/partners" },
     { label: "Membership", href: "/membership" },
     { label: "Book", href: "/book" },
     { label: "Contact", href: "/contact" },
@@ -56,8 +54,8 @@ export const priorityOptions = [
 ];
 
 export const resourceLinks = [
-  { label: "Learning Hub", href: "/resources" },
-  { label: "Membership Benefits", href: "/membership" },
-  { label: "Provider Reference", href: "/partners" },
-  { label: "Affiliate Disclosure", href: "/affiliate-disclosure" },
+  { label: "Financial Learning Center", href: "/resources" },
+  { label: "Financial Tools & Access", href: "/links" },
+  { label: "Ecosystem Partners", href: "/partners" },
+  { label: "Membership Pathways", href: "/membership" },
 ];
