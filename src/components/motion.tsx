@@ -42,7 +42,7 @@ export function FadeIn({
       initial={{ opacity: 0, y: 18 }}
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: easeOut, delay }}
-      viewport={{ once: true, amount: 0.05, margin: "0px 0px -10% 0px" }}
+      viewport={{ once: true, amount: 0.01, margin: "0px 0px -22% 0px" }}
       className={cn(className)}
       {...props}
     >
@@ -64,7 +64,7 @@ export function Stagger({
     <motion.div
       initial="hidden"
       whileInView="show"
-      viewport={{ once: true, amount: 0.05, margin: "0px 0px -10% 0px" }}
+      viewport={{ once: true, amount: 0.01, margin: "0px 0px -22% 0px" }}
       variants={{
         hidden: { opacity: 0 },
         show: {
