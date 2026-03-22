@@ -24,6 +24,8 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
+import { submitToFormspree } from "@/lib/formspree";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 const fullAccessHighlights = [
   "Financial Education (FREE)",
@@ -105,8 +107,6 @@ const iponHighlights = [
   "Option to upgrade to Full Access",
 ];
 
-const storageKey = "pk_membership_submissions";
-
 type FormType = "full_access" | "ipon_challenge";
 
 type MembershipForm = {
@@ -132,7 +132,6 @@ type Submission = MembershipForm & {
   referenceId: string;
   timestamp: string;
   formType: FormType;
-  userAgent: string;
 };
 
 const emptyForm: MembershipForm = {
@@ -154,82 +153,214 @@ const emptyForm: MembershipForm = {
   consent: false,
 };
 
-const csvFields = [
-  "referenceId",
-  "timestamp",
-  "formType",
-  "firstName",
-  "middleName",
-  "lastName",
-  "gender",
-  "genderOther",
-  "civilStatus",
-  "civilStatusOther",
-  "dateOfBirth",
-  "placeOfBirth",
-  "age",
-  "weight",
-  "height",
-  "citizenship",
-  "email",
-  "mobile",
-  "consent",
-  "userAgent",
-];
-
-function downloadJson(filename: string, data: unknown) {
-  const blob = new Blob([JSON.stringify(data, null, 2)], {
-    type: "application/json;charset=utf-8;",
-  });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-}
-
-function downloadCsv(filename: string, rows: (string | number | boolean)[][]) {
-  const csv = rows
-    .map((row) =>
-      row
-        .map((cell) => {
-          const text = String(cell ?? "");
-          if (text.includes(",") || text.includes("\"") || text.includes("\n")) {
-            return `"${text.replace(/\"/g, "\"\"")}"`;
-          }
-          return text;
-        })
-        .join(",")
-    )
-    .join("\n");
-
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-}
-
 function buildReferenceId() {
   return `PK-${Date.now().toString(36).slice(-6).toUpperCase()}`;
 }
 
-function getStoredSubmissions(): Submission[] {
-  if (typeof window === "undefined") return [];
-  const stored = localStorage.getItem(storageKey);
-  if (!stored) return [];
-  try {
-    return JSON.parse(stored) as Submission[];
-  } catch {
-    return [];
-  }
+function MembershipApplicationFields({
+  formKey,
+  formData,
+  updateField,
+  formError,
+  submitting,
+  submitLabel,
+  onClear,
+}: {
+  formKey: FormType;
+  formData: MembershipForm;
+  updateField: (field: keyof MembershipForm, value: string | boolean) => void;
+  formError: string | null;
+  submitting: boolean;
+  submitLabel: string;
+  onClear: () => void;
+}) {
+  return (
+    <>
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-brand-primary">First Name*</label>
+          <Input
+            value={formData.firstName}
+            onChange={(event) => updateField("firstName", event.target.value)}
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-brand-primary">Middle Name*</label>
+          <Input
+            value={formData.middleName}
+            onChange={(event) => updateField("middleName", event.target.value)}
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-brand-primary">Last Name*</label>
+          <Input
+            value={formData.lastName}
+            onChange={(event) => updateField("lastName", event.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-2">
+          <label className="text-xs font-semibold text-brand-primary">Gender*</label>
+          <div className="flex flex-wrap gap-3 text-sm text-brand-muted">
+            {[
+              { label: "Male", value: "Male" },
+              { label: "Female", value: "Female" },
+              { label: "Other", value: "Other" },
+            ].map((option) => (
+              <label key={option.value} className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name={`${formKey}-gender`}
+                  value={option.value}
+                  checked={formData.gender === option.value}
+                  onChange={() => updateField("gender", option.value)}
+                />
+                {option.label}
+              </label>
+            ))}
+          </div>
+          {formData.gender === "Other" && (
+            <Input
+              placeholder="Specify gender"
+              value={formData.genderOther}
+              onChange={(event) => updateField("genderOther", event.target.value)}
+            />
+          )}
+        </div>
+        <div className="space-y-2">
+          <label className="text-xs font-semibold text-brand-primary">Civil Status*</label>
+          <Select
+            value={formData.civilStatus}
+            onValueChange={(value) => updateField("civilStatus", value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select status" />
+            </SelectTrigger>
+            <SelectContent>
+              {["Single", "Married", "Separated", "Widowed", "Other"].map((option) => (
+                <SelectItem key={option} value={option}>
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {formData.civilStatus === "Other" && (
+            <Input
+              placeholder="Specify status"
+              value={formData.civilStatusOther}
+              onChange={(event) => updateField("civilStatusOther", event.target.value)}
+            />
+          )}
+        </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-brand-primary">Date of Birth*</label>
+          <Input
+            type="date"
+            value={formData.dateOfBirth}
+            onChange={(event) => updateField("dateOfBirth", event.target.value)}
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-brand-primary">Age*</label>
+          <Input
+            type="number"
+            min="0"
+            value={formData.age}
+            onChange={(event) => updateField("age", event.target.value)}
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-brand-primary">Place of Birth*</label>
+          <Input
+            value={formData.placeOfBirth}
+            onChange={(event) => updateField("placeOfBirth", event.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-brand-primary">
+            Weight (lbs/pounds)*
+          </label>
+          <Input
+            type="number"
+            min="0"
+            value={formData.weight}
+            onChange={(event) => updateField("weight", event.target.value)}
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-brand-primary">
+            Height (ft or cm)*
+          </label>
+          <Input
+            value={formData.height}
+            onChange={(event) => updateField("height", event.target.value)}
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-brand-primary">Citizenship*</label>
+          <Input
+            value={formData.citizenship}
+            onChange={(event) => updateField("citizenship", event.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-brand-primary">Email*</label>
+          <Input
+            type="email"
+            value={formData.email}
+            onChange={(event) => updateField("email", event.target.value)}
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-brand-primary">
+            Mobile / WhatsApp
+          </label>
+          <Input
+            value={formData.mobile}
+            onChange={(event) => updateField("mobile", event.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="flex items-start gap-3 rounded-lg border border-brand-primary/10 bg-brand-background p-3">
+        <Checkbox
+          id={`${formKey}-consent`}
+          checked={formData.consent}
+          onCheckedChange={(checked) => updateField("consent", Boolean(checked))}
+        />
+        <label htmlFor={`${formKey}-consent`} className="text-xs text-brand-muted">
+          By providing your details, you are giving us permission to contact and
+          message you anytime regarding our opportunities.
+        </label>
+      </div>
+
+      {formError && <p className="text-xs text-red-600">{formError}</p>}
+
+      <div className="flex flex-wrap gap-3">
+        <Button type="submit" variant="gold" disabled={submitting}>
+          {submitting ? "Submitting..." : submitLabel}
+        </Button>
+        <Button type="button" variant="outline" onClick={onClear}>
+          Clear Form
+        </Button>
+      </div>
+
+      <p className="text-[11px] text-brand-muted">
+        Never submit passwords. Your info is used for membership purposes only.
+      </p>
+    </>
+  );
 }
 
 export default function MembershipPage() {
@@ -239,6 +370,7 @@ export default function MembershipPage() {
     ipon_challenge: { ...emptyForm },
   });
   const [formError, setFormError] = React.useState<string | null>(null);
+  const [submitting, setSubmitting] = React.useState(false);
   const [submitted, setSubmitted] = React.useState<Submission | null>(null);
 
   const formData = forms[activeForm];
@@ -270,11 +402,14 @@ export default function MembershipPage() {
     if (!formData.age.trim()) missing.push("Age");
     if (!formData.citizenship.trim()) missing.push("Citizenship");
     if (!formData.email.trim()) missing.push("Email");
+    if (!formData.placeOfBirth.trim()) missing.push("Place of birth");
+    if (!formData.weight.trim()) missing.push("Weight");
+    if (!formData.height.trim()) missing.push("Height");
     if (!formData.consent) missing.push("Consent");
     return missing;
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     const missing = validateForm();
     if (missing.length) {
@@ -282,33 +417,94 @@ export default function MembershipPage() {
       return;
     }
 
+    setSubmitting(true);
+    setFormError(null);
+
     const submission: Submission = {
       ...formData,
       referenceId: buildReferenceId(),
       timestamp: new Date().toISOString(),
       formType: activeForm,
-      userAgent: navigator.userAgent,
     };
+    try {
+      if (activeForm === "full_access") {
+        const supabase = getSupabaseBrowserClient();
+        if (!supabase) {
+          throw new Error("Supabase is not configured yet for Full Access submissions.");
+        }
 
-    const stored = getStoredSubmissions();
-    const next = [submission, ...stored];
-    localStorage.setItem(storageKey, JSON.stringify(next));
-    setSubmitted(submission);
-  };
+        const { error } = await supabase.from("membership_registrations").insert({
+          reference_id: submission.referenceId,
+          membership_path: "full_access",
+          source_page: "/membership",
+          first_name: submission.firstName,
+          middle_name: submission.middleName,
+          last_name: submission.lastName,
+          gender: submission.gender,
+          gender_other: submission.genderOther || null,
+          civil_status: submission.civilStatus,
+          civil_status_other: submission.civilStatusOther || null,
+          date_of_birth: submission.dateOfBirth,
+          place_of_birth: submission.placeOfBirth,
+          age: Number(submission.age),
+          weight: submission.weight,
+          height: submission.height,
+          citizenship: submission.citizenship,
+          email: submission.email,
+          mobile: submission.mobile || null,
+          consent: submission.consent,
+          status: "new",
+          notes: {
+            submitted_at: submission.timestamp,
+          },
+        });
 
-  const handleDownloadSubmission = (format: "json" | "csv") => {
-    if (!submitted) return;
-    if (format === "json") {
-      downloadJson(`pk-membership-${submitted.referenceId}.json`, submitted);
-      return;
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        setForms((prev) => ({
+          ...prev,
+          full_access: { ...emptyForm },
+        }));
+      } else {
+        await submitToFormspree({
+          form_type: "membership_ipon_challenge",
+          membership_path: "Ipon Challenge",
+          source_page: "/membership",
+          reference_id: submission.referenceId,
+          submitted_at: submission.timestamp,
+          first_name: submission.firstName,
+          middle_name: submission.middleName,
+          last_name: submission.lastName,
+          gender: submission.gender,
+          gender_other: submission.genderOther,
+          civil_status: submission.civilStatus,
+          civil_status_other: submission.civilStatusOther,
+          date_of_birth: submission.dateOfBirth,
+          place_of_birth: submission.placeOfBirth,
+          age: submission.age,
+          weight: submission.weight,
+          height: submission.height,
+          citizenship: submission.citizenship,
+          email: submission.email,
+          mobile: submission.mobile,
+          consent: submission.consent,
+          _subject: `Prosperity Klub Membership - ${submission.referenceId}`,
+        });
+
+        setForms((prev) => ({
+          ...prev,
+          ipon_challenge: { ...emptyForm },
+        }));
+      }
+
+      setSubmitted(submission);
+    } catch (error) {
+      setFormError((error as Error).message);
+    } finally {
+      setSubmitting(false);
     }
-    const rows: (string | number | boolean)[][] = [csvFields];
-    rows.push(
-      csvFields.map(
-        (field) => (submitted as Record<string, string | boolean>)[field] ?? ""
-      )
-    );
-    downloadCsv(`pk-membership-${submitted.referenceId}.csv`, rows);
   };
 
   return (
@@ -432,8 +628,19 @@ export default function MembershipPage() {
                 <Button asChild variant="gold">
                   <Link href="#registration">Register for Ipon Challenge</Link>
                 </Button>
-                <Button asChild variant="outline">
-                  <Link href="/membership#full-access">Upgrade to Full Access</Link>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setActiveForm("full_access");
+                    setFormError(null);
+                    document.getElementById("registration")?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "start",
+                    });
+                  }}
+                >
+                  Apply for Full Access
                 </Button>
               </div>
               <div className="flex flex-wrap gap-3 text-xs">
@@ -614,17 +821,14 @@ export default function MembershipPage() {
                 <p>
                   Thank you! Your reference ID is <strong>{submitted.referenceId}</strong>.
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" onClick={() => handleDownloadSubmission("json")}>
-                    Download JSON
-                  </Button>
-                  <Button variant="outline" onClick={() => handleDownloadSubmission("csv")}>
-                    Download CSV
-                  </Button>
-                  <Button variant="ghost" onClick={() => setSubmitted(null)}>
-                    Submit another response
-                  </Button>
-                </div>
+                <p>
+                  {submitted.formType === "full_access"
+                    ? "Your Full Access application has been saved to the membership database. We will review it and contact you for the next step."
+                    : "We received your Ipon Challenge registration and will contact you for the next step."}
+                </p>
+                <Button variant="ghost" onClick={() => setSubmitted(null)}>
+                  Submit another response
+                </Button>
               </CardContent>
             </Card>
           )}
@@ -643,232 +847,125 @@ export default function MembershipPage() {
                   <TabsTrigger value="ipon_challenge">Ipon Challenge</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value={activeForm}>
+                <TabsContent value="full_access" className="space-y-5">
                   <form className="space-y-5" onSubmit={handleSubmit}>
-                    <div className="grid gap-4 md:grid-cols-3">
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold text-brand-primary">
-                          First Name*
-                        </label>
-                        <Input
-                          value={formData.firstName}
-                          onChange={(event) => updateField("firstName", event.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold text-brand-primary">
-                          Middle Name
-                        </label>
-                        <Input
-                          value={formData.middleName}
-                          onChange={(event) => updateField("middleName", event.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold text-brand-primary">
-                          Last Name*
-                        </label>
-                        <Input
-                          value={formData.lastName}
-                          onChange={(event) => updateField("lastName", event.target.value)}
-                        />
-                      </div>
+                    <div className="rounded-2xl border border-brand-primary/10 bg-brand-background p-4 text-sm text-brand-muted">
+                      <p className="font-semibold text-brand-primary">
+                        Prosperity Klub Membership Form
+                      </p>
+                      <p className="mt-2">
+                        Thank you for your interest in becoming part of our growing
+                        community. Kindly fill out all questions completely and
+                        truthfully.
+                      </p>
+                      <p className="mt-2">
+                        All details and information that you provide are secured and
+                        used only for this membership application. By providing your
+                        details, you give us permission to contact and message you
+                        anytime regarding our opportunities.
+                      </p>
                     </div>
 
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <label className="text-xs font-semibold text-brand-primary">
-                          Gender*
-                        </label>
-                        <div className="flex flex-wrap gap-3 text-sm text-brand-muted">
-                          {[
-                            { label: "Male", value: "Male" },
-                            { label: "Female", value: "Female" },
-                            { label: "Other", value: "Other" },
-                          ].map((option) => (
-                            <label key={option.value} className="flex items-center gap-2">
-                              <input
-                                type="radio"
-                                name="gender"
-                                value={option.value}
-                                checked={formData.gender === option.value}
-                                onChange={() => updateField("gender", option.value)}
-                              />
-                              {option.label}
-                            </label>
-                          ))}
+                    <div className="rounded-2xl border border-brand-primary/10 bg-white/80 p-4 text-sm text-brand-muted">
+                      <p className="font-semibold text-brand-primary">
+                        Full Access Membership benefits
+                      </p>
+                      <p className="mt-2">
+                        This is the broader Prosperity Klub membership path with
+                        education, protection, discounts, community access, and long-term
+                        growth support.
+                      </p>
+                      <ul className="mt-3 list-disc space-y-1 pl-5">
+                        {fullAccessHighlights.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                      <p className="mt-4 text-xs">
+                        Watch the membership benefits video and review the full benefits
+                        list above before submitting if you want the complete package.
+                      </p>
+                    </div>
+
+                    <MembershipApplicationFields
+                      formKey="full_access"
+                      formData={forms.full_access}
+                      updateField={updateField}
+                      formError={formError}
+                      submitting={submitting}
+                      submitLabel="Submit Full Access Application"
+                      onClear={() =>
+                        setForms((prev) => ({
+                          ...prev,
+                          full_access: { ...emptyForm },
+                        }))
+                      }
+                    />
+                  </form>
+                </TabsContent>
+
+                <TabsContent value="ipon_challenge">
+                  <form className="space-y-5" onSubmit={handleSubmit}>
+                    <div className="rounded-2xl border border-brand-primary/10 bg-brand-background p-4 text-sm text-brand-muted">
+                      <p className="font-semibold text-brand-primary">
+                        Prosperity Klub Membership Ipon Challenge Form
+                      </p>
+                      <p className="mt-2">
+                        Thank you for your interest in becoming part of our growing
+                        community. Kindly fill out all questions completely and
+                        truthfully.
+                      </p>
+                      <p className="mt-2">
+                        All details you provide are kept secure and used only for this
+                        membership application. By providing your details, you give us
+                        permission to contact and message you regarding opportunities.
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl border border-brand-primary/10 bg-white/80 p-4 text-sm text-brand-muted">
+                      <p className="font-semibold text-brand-primary">
+                        Installment option benefits
+                      </p>
+                      <ul className="mt-3 list-disc space-y-1 pl-5">
+                        {iponHighlights.slice(0, 3).map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                      <div className="mt-4 rounded-xl border border-brand-gold/20 bg-brand-gold/5 p-4">
+                        <p className="font-semibold text-brand-primary">
+                          Want full access instead?
+                        </p>
+                        <p className="mt-2">
+                          Switch to the Full Access tab to apply for the broader package
+                          of education, protection, discounts, and community benefits.
+                        </p>
+                        <div className="mt-4">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                              setActiveForm("full_access");
+                              setFormError(null);
+                            }}
+                          >
+                            Apply for Full Access Instead
+                          </Button>
                         </div>
-                        {formData.gender === "Other" && (
-                          <Input
-                            placeholder="Specify gender"
-                            value={formData.genderOther}
-                            onChange={(event) => updateField("genderOther", event.target.value)}
-                          />
-                        )}
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-semibold text-brand-primary">
-                          Civil Status*
-                        </label>
-                        <Select
-                          value={formData.civilStatus}
-                          onValueChange={(value) => updateField("civilStatus", value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select status" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {[
-                              "Single",
-                              "Married",
-                              "Separated",
-                              "Widowed",
-                              "Other",
-                            ].map((option) => (
-                              <SelectItem key={option} value={option}>
-                                {option}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        {formData.civilStatus === "Other" && (
-                          <Input
-                            placeholder="Specify status"
-                            value={formData.civilStatusOther}
-                            onChange={(event) =>
-                              updateField("civilStatusOther", event.target.value)
-                            }
-                          />
-                        )}
                       </div>
                     </div>
-
-                    <div className="grid gap-4 md:grid-cols-3">
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold text-brand-primary">
-                          Date of Birth*
-                        </label>
-                        <Input
-                          type="date"
-                          value={formData.dateOfBirth}
-                          onChange={(event) => updateField("dateOfBirth", event.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold text-brand-primary">
-                          Age*
-                        </label>
-                        <Input
-                          type="number"
-                          min="0"
-                          value={formData.age}
-                          onChange={(event) => updateField("age", event.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold text-brand-primary">
-                          Place of Birth
-                        </label>
-                        <Input
-                          value={formData.placeOfBirth}
-                          onChange={(event) => updateField("placeOfBirth", event.target.value)}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-3">
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold text-brand-primary">
-                          Weight (lbs)
-                        </label>
-                        <Input
-                          type="number"
-                          min="0"
-                          value={formData.weight}
-                          onChange={(event) => updateField("weight", event.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold text-brand-primary">
-                          Height (ft or cm)
-                        </label>
-                        <Input
-                          value={formData.height}
-                          onChange={(event) => updateField("height", event.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold text-brand-primary">
-                          Citizenship*
-                        </label>
-                        <Input
-                          value={formData.citizenship}
-                          onChange={(event) => updateField("citizenship", event.target.value)}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold text-brand-primary">
-                          Email*
-                        </label>
-                        <Input
-                          type="email"
-                          value={formData.email}
-                          onChange={(event) => updateField("email", event.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold text-brand-primary">
-                          Mobile / WhatsApp
-                        </label>
-                        <Input
-                          value={formData.mobile}
-                          onChange={(event) => updateField("mobile", event.target.value)}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3 rounded-lg border border-brand-primary/10 bg-brand-background p-3">
-                      <Checkbox
-                        id="consent"
-                        checked={formData.consent}
-                        onCheckedChange={(checked) =>
-                          updateField("consent", Boolean(checked))
-                        }
-                      />
-                      <label htmlFor="consent" className="text-xs text-brand-muted">
-                        By providing your details, you are giving us permission to contact
-                        and message you anytime regarding our opportunities.
-                      </label>
-                    </div>
-
-                    {formError && (
-                      <p className="text-xs text-red-600">{formError}</p>
-                    )}
-
-                    <div className="flex flex-wrap gap-3">
-                      <Button type="submit" variant="gold">
-                        Submit Registration
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() =>
-                          setForms((prev) => ({
-                            ...prev,
-                            [activeForm]: { ...emptyForm },
-                          }))
-                        }
-                      >
-                        Clear Form
-                      </Button>
-                    </div>
-
-                    <p className="text-[11px] text-brand-muted">
-                      Never submit passwords. Your info is used for membership purposes only.
-                    </p>
+                    <MembershipApplicationFields
+                      formKey="ipon_challenge"
+                      formData={forms.ipon_challenge}
+                      updateField={updateField}
+                      formError={formError}
+                      submitting={submitting}
+                      submitLabel="Submit Ipon Challenge Registration"
+                      onClear={() =>
+                        setForms((prev) => ({
+                          ...prev,
+                          ipon_challenge: { ...emptyForm },
+                        }))
+                      }
+                    />
                   </form>
                 </TabsContent>
               </Tabs>
