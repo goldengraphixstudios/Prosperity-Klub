@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
-import fs from "fs/promises";
-import path from "path";
+import { NextResponse } from "next/server";
+
+import { getSupabaseServerClient } from "@/lib/supabase-server";
 
 const highIncomePatterns = ["40k", "80k", "100k", "120k"];
 
@@ -102,8 +102,16 @@ function computeFollowUp({
 
 export async function POST(request: Request) {
   try {
-    const data = await request.json();
+    const supabase = getSupabaseServerClient();
 
+    if (!supabase) {
+      return NextResponse.json(
+        { error: "Supabase server configuration is missing." },
+        { status: 500 }
+      );
+    }
+
+    const data = await request.json();
     const name = typeof data.name === "string" ? data.name.trim() : "";
     const email = typeof data.email === "string" ? data.email.trim() : "";
 
@@ -143,11 +151,13 @@ export async function POST(request: Request) {
       requestedResource,
     });
 
-    const lead = {
+    const { error } = await supabase.from("leads").insert({
+      reference_id: randomUUID(),
       name,
       email,
-      phone: typeof data.phone === "string" ? data.phone : null,
-      location: typeof data.location === "string" ? data.location : null,
+      phone: typeof data.phone === "string" ? data.phone.trim() || null : null,
+      location:
+        typeof data.location === "string" ? data.location.trim() || null : null,
       is_ofw: isOfw,
       income_range: incomeRange,
       priorities,
@@ -156,31 +166,15 @@ export async function POST(request: Request) {
       source_page: sourcePage,
       requested_resource: requestedResource,
       recommended_follow_up: recommendedFollowUp,
-    };
+      status: "new",
+      notes: {},
+    });
 
-    const filePath = path.join(process.cwd(), "data", "leads.json");
-    let existing: unknown[] = [];
-
-    try {
-      const file = await fs.readFile(filePath, "utf-8");
-      existing = JSON.parse(file);
-      if (!Array.isArray(existing)) {
-        existing = [];
-      }
-    } catch {
-      existing = [];
+    if (error) {
+      throw new Error(error.message);
     }
 
-    const record = {
-      id: randomUUID(),
-      created_at: new Date().toISOString(),
-      ...lead,
-    };
-
-    existing.push(record);
-    await fs.writeFile(filePath, JSON.stringify(existing, null, 2));
-
-    return NextResponse.json({ ok: true, stored: "json" });
+    return NextResponse.json({ ok: true, stored: "supabase" });
   } catch (error) {
     return NextResponse.json(
       { error: (error as Error).message || "Unexpected error" },

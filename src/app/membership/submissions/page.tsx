@@ -29,20 +29,19 @@ export default function MembershipSubmissionsPage() {
             </CardHeader>
             <CardContent className="space-y-4 text-sm text-brand-muted">
               <p>
-                The Ipon Challenge registration form now submits through Formspree,
-                and the Full Access path redirects to the official Google Form.
+                Membership registrations now submit through the app backend into
+                Supabase instead of staying in local browser storage.
               </p>
               <p>
-                If you need an internal admin dashboard later, the next step is to
-                connect submissions to a database or CRM instead of local browser
-                storage.
+                Use the admin dashboard to review live leads, ebook requests, and
+                membership registrations in one place.
               </p>
               <div className="flex flex-wrap gap-3">
                 <Button asChild variant="outline">
                   <Link href="/membership">Back to Membership</Link>
                 </Button>
                 <Button asChild variant="gold">
-                  <Link href="/contact">Open Contact Form</Link>
+                  <Link href="/admin">Open Admin Dashboard</Link>
                 </Button>
               </div>
             </CardContent>

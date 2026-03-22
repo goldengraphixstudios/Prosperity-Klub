@@ -4,7 +4,6 @@ import * as React from "react";
 import { useRouter, usePathname } from "next/navigation";
 
 import { incomeRanges, priorityOptions } from "@/lib/site";
-import { submitToFormspree } from "@/lib/formspree";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -56,18 +55,25 @@ export function LeadForm() {
 
     setSubmitting(true);
     try {
-      await submitToFormspree({
-        form_type: "contact",
-        source_page: pathname,
-        name: form.name,
-        email: form.email,
-        phone: form.phone,
-        location: form.location,
-        is_ofw: form.isOfw,
-        income_range: form.incomeRange,
-        priorities: form.priorities,
-        _subject: "Prosperity Klub Contact Form Submission",
+      const response = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          location: form.location,
+          is_ofw: form.isOfw === "Yes",
+          income_range: form.incomeRange,
+          priorities: form.priorities,
+          source_page: pathname,
+        }),
       });
+
+      if (!response.ok) {
+        const data = (await response.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(data?.error || "Unable to submit. Please try again.");
+      }
 
       router.push("/thank-you");
     } catch (err) {

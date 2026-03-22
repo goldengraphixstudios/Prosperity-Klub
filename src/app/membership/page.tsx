@@ -24,8 +24,6 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
-import { submitToFormspree } from "@/lib/formspree";
-import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 const fullAccessHighlights = [
   "Financial Education (FREE)",
@@ -427,53 +425,19 @@ export default function MembershipPage() {
       formType: activeForm,
     };
     try {
-      if (activeForm === "full_access") {
-        const supabase = getSupabaseBrowserClient();
-        if (!supabase) {
-          throw new Error("Supabase is not configured yet for Full Access submissions.");
-        }
+      const endpoint =
+        activeForm === "full_access"
+          ? "/api/membership/full-access"
+          : "/api/membership/ipon-challenge";
 
-        const { error } = await supabase.from("membership_registrations").insert({
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
           reference_id: submission.referenceId,
-          membership_path: "full_access",
           source_page: "/membership",
-          first_name: submission.firstName,
-          middle_name: submission.middleName,
-          last_name: submission.lastName,
-          gender: submission.gender,
-          gender_other: submission.genderOther || null,
-          civil_status: submission.civilStatus,
-          civil_status_other: submission.civilStatusOther || null,
-          date_of_birth: submission.dateOfBirth,
-          place_of_birth: submission.placeOfBirth,
-          age: Number(submission.age),
-          weight: submission.weight,
-          height: submission.height,
-          citizenship: submission.citizenship,
-          email: submission.email,
-          mobile: submission.mobile || null,
-          consent: submission.consent,
-          status: "new",
-          notes: {
-            submitted_at: submission.timestamp,
-          },
-        });
-
-        if (error) {
-          throw new Error(error.message);
-        }
-
-        setForms((prev) => ({
-          ...prev,
-          full_access: { ...emptyForm },
-        }));
-      } else {
-        await submitToFormspree({
-          form_type: "membership_ipon_challenge",
-          membership_path: "Ipon Challenge",
-          source_page: "/membership",
-          reference_id: submission.referenceId,
-          submitted_at: submission.timestamp,
           first_name: submission.firstName,
           middle_name: submission.middleName,
           last_name: submission.lastName,
@@ -490,14 +454,21 @@ export default function MembershipPage() {
           email: submission.email,
           mobile: submission.mobile,
           consent: submission.consent,
-          _subject: `Prosperity Klub Membership - ${submission.referenceId}`,
-        });
+          notes: {
+            submitted_at: submission.timestamp,
+          },
+        }),
+      });
 
-        setForms((prev) => ({
-          ...prev,
-          ipon_challenge: { ...emptyForm },
-        }));
+      if (!response.ok) {
+        const data = (await response.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(data?.error || "Unable to submit right now. Please try again.");
       }
+
+      setForms((prev) => ({
+        ...prev,
+        [activeForm]: { ...emptyForm },
+      }));
 
       setSubmitted(submission);
     } catch (error) {
