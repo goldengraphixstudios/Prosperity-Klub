@@ -5,9 +5,9 @@ import { getSupabaseServerClient } from "@/lib/supabase-server";
 
 export async function GET(request: NextRequest) {
   try {
+    const cookieAuthed = await isAdminAuthenticated();
     const headerKey = request.headers.get("x-admin-key");
     const expected = process.env.ADMIN_DASHBOARD_KEY;
-    const cookieAuthed = await isAdminAuthenticated();
     const headerAuthed = Boolean(expected && headerKey && headerKey === expected);
 
     if (!cookieAuthed && !headerAuthed) {
@@ -17,73 +17,50 @@ export async function GET(request: NextRequest) {
     const supabase = getSupabaseServerClient();
     if (!supabase) {
       return NextResponse.json(
-        { error: "Supabase server configuration is missing." },
+        { error: "Supabase configuration missing. Check SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY." },
         { status: 500 }
       );
     }
 
     const [
-      leadsCountResult,
-      ebookCountResult,
-      fullAccessCountResult,
-      iponChallengeCountResult,
-      leadsResult,
-      ebooksResult,
-      fullAccessResult,
-      iponChallengeResult,
+      leadsCountRes,
+      ebookCountRes,
+      fullAccessCountRes,
+      iponCountRes,
+      leadsRes,
+      ebookRes,
+      fullAccessRes,
+      iponRes,
     ] = await Promise.all([
       supabase.from("leads").select("*", { count: "exact", head: true }),
       supabase.from("ebook_requests").select("*", { count: "exact", head: true }),
-      supabase
-        .from("full_access_registrations")
-        .select("*", { count: "exact", head: true }),
-      supabase
-        .from("ipon_challenge_registrations")
-        .select("*", { count: "exact", head: true }),
-      supabase.from("leads").select("*").order("created_at", { ascending: false }).limit(100),
-      supabase
-        .from("ebook_requests")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(100),
-      supabase
-        .from("full_access_registrations")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(100),
-      supabase
-        .from("ipon_challenge_registrations")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(100),
+      supabase.from("full_access_registrations").select("*", { count: "exact", head: true }),
+      supabase.from("ipon_challenge_registrations").select("*", { count: "exact", head: true }),
+      supabase.from("leads").select("*").order("created_at", { ascending: false }).limit(200),
+      supabase.from("ebook_requests").select("*").order("created_at", { ascending: false }).limit(200),
+      supabase.from("full_access_registrations").select("*").order("created_at", { ascending: false }).limit(200),
+      supabase.from("ipon_challenge_registrations").select("*").order("created_at", { ascending: false }).limit(200),
     ]);
 
-    const errors = [
-      leadsCountResult.error,
-      ebookCountResult.error,
-      fullAccessCountResult.error,
-      iponChallengeCountResult.error,
-      leadsResult.error,
-      ebooksResult.error,
-      fullAccessResult.error,
-      iponChallengeResult.error,
-    ].filter(Boolean);
+    // Surface the first Supabase error clearly
+    const firstError = [leadsCountRes, ebookCountRes, fullAccessCountRes, iponCountRes, leadsRes, ebookRes, fullAccessRes, iponRes]
+      .find((r) => r.error)?.error;
 
-    if (errors.length) {
-      throw new Error(errors.map((error) => error?.message).join(", "));
+    if (firstError) {
+      return NextResponse.json({ error: `Supabase error: ${firstError.message}` }, { status: 500 });
     }
 
     return NextResponse.json({
       counts: {
-        leads: leadsCountResult.count ?? 0,
-        ebook_requests: ebookCountResult.count ?? 0,
-        full_access_registrations: fullAccessCountResult.count ?? 0,
-        ipon_challenge_registrations: iponChallengeCountResult.count ?? 0,
+        leads: leadsCountRes.count ?? 0,
+        ebook_requests: ebookCountRes.count ?? 0,
+        full_access_registrations: fullAccessCountRes.count ?? 0,
+        ipon_challenge_registrations: iponCountRes.count ?? 0,
       },
-      leads: leadsResult.data ?? [],
-      ebook_requests: ebooksResult.data ?? [],
-      full_access_registrations: fullAccessResult.data ?? [],
-      ipon_challenge_registrations: iponChallengeResult.data ?? [],
+      leads: leadsRes.data ?? [],
+      ebook_requests: ebookRes.data ?? [],
+      full_access_registrations: fullAccessRes.data ?? [],
+      ipon_challenge_registrations: iponRes.data ?? [],
     });
   } catch (error) {
     return NextResponse.json(
