@@ -33,26 +33,6 @@ export default function ResourcesPage() {
             Explore Prosperity Klub guides, tools, and learning materials crafted for
             Filipinos and OFWs who want better money clarity and long-term growth.
           </p>
-          <div className="max-w-3xl rounded-2xl border border-brand-primary/10 bg-white/80 p-4 text-sm text-brand-muted">
-            <p className="font-semibold text-brand-primary">This section will grow over time</p>
-            <p className="mt-2">
-              Prosperity Klub can expand this page into a fuller Financial Learning
-              Center with financial literacy articles, OFW financial guides, budget
-              templates, investment basics, and future learning resources.
-            </p>
-            <p className="mt-2 text-brand-primary">
-              This helps both member education and long-term SEO growth.
-            </p>
-          </div>
-          <div className="max-w-3xl rounded-2xl border border-brand-primary/10 bg-white/80 p-4 text-sm text-brand-muted">
-            <p className="font-semibold text-brand-primary">Why we ask for your email</p>
-            <p className="mt-2">
-              We use it to send the ebook directly to your inbox, continue your
-              learning journey, and invite you into the next best step if you want
-              guidance.
-            </p>
-            <p className="mt-2 text-brand-primary">We respect your inbox. No spam.</p>
-          </div>
         </FadeIn>
 
         <FadeIn className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr]">

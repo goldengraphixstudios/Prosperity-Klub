@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { sendEbookDelivery, sendEbookOwnerNotification } from "@/lib/email";
+import { sendCheckupConfirmation } from "@/lib/email";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
 
 export async function POST(request: Request) {
@@ -17,25 +17,23 @@ export async function POST(request: Request) {
     const data = await request.json();
     const name = typeof data.name === "string" ? data.name.trim() : "";
     const email = typeof data.email === "string" ? data.email.trim() : "";
+    const score = typeof data.score === "number" ? data.score : 0;
+    const tier =
+      data.tier === "green" || data.tier === "amber" || data.tier === "red"
+        ? (data.tier as "green" | "amber" | "red")
+        : "green";
 
-    if (!name || !email) {
-      return NextResponse.json(
-        { error: "Name and email are required." },
-        { status: 400 }
-      );
+    if (!email) {
+      return NextResponse.json({ error: "Email is required." }, { status: 400 });
     }
 
-    const sourcePage =
-      typeof data.source_page === "string" ? data.source_page : "/resources";
-    const requestedResource =
-      typeof data.requested_resource === "string"
-        ? data.requested_resource
-        : "The Secret to Saving and Building Your Future";
+    const displayName = name || "Financial Check-up User";
+    const requestedResource = `Financial Check-up — ${score} YES (${data.tierLabel ?? tier})`;
 
     const { error } = await supabase.from("ebook_requests").insert({
-      name,
+      name: displayName,
       email,
-      source_page: sourcePage,
+      source_page: "/resources/financial-checkup",
       requested_resource: requestedResource,
       status: "delivered",
       delivery_method: "email",
@@ -45,13 +43,9 @@ export async function POST(request: Request) {
       throw new Error(error.message);
     }
 
-    // Send emails concurrently — don't block response on failure
-    await Promise.allSettled([
-      sendEbookDelivery({ to: email, name, requestedResource }),
-      sendEbookOwnerNotification({ name, email, requestedResource, sourcePage }),
-    ]);
+    await sendCheckupConfirmation({ to: email, name: displayName, score, tier });
 
-    return NextResponse.json({ ok: true, stored: "supabase" });
+    return NextResponse.json({ ok: true });
   } catch (error) {
     return NextResponse.json(
       { error: (error as Error).message || "Unexpected error" },

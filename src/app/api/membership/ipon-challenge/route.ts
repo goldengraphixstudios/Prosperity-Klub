@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { sendMembershipConfirmation, sendMembershipOwnerNotification } from "@/lib/email";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
 
 export async function POST(request: Request) {
@@ -53,6 +54,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Age must be a valid number." }, { status: 400 });
     }
 
+    const mobile = typeof data.mobile === "string" ? data.mobile.trim() || null : null;
+
     const { error } = await supabase.from("ipon_challenge_registrations").insert({
       reference_id: data.reference_id.trim(),
       source_page: typeof data.source_page === "string" ? data.source_page : "/membership",
@@ -74,7 +77,7 @@ export async function POST(request: Request) {
       height: data.height.trim(),
       citizenship: data.citizenship.trim(),
       email: data.email.trim(),
-      mobile: typeof data.mobile === "string" ? data.mobile.trim() || null : null,
+      mobile,
       consent: true,
       status: "new",
       notes:
@@ -88,6 +91,22 @@ export async function POST(request: Request) {
     if (error) {
       throw new Error(error.message);
     }
+
+    await Promise.allSettled([
+      sendMembershipConfirmation({
+        to: data.email.trim(),
+        firstName: data.first_name.trim(),
+        plan: "Ipon Challenge",
+      }),
+      sendMembershipOwnerNotification({
+        firstName: data.first_name.trim(),
+        lastName: data.last_name.trim(),
+        email: data.email.trim(),
+        mobile,
+        plan: "Ipon Challenge",
+        referenceId: data.reference_id.trim(),
+      }),
+    ]);
 
     return NextResponse.json({ ok: true, stored: "supabase" });
   } catch (error) {

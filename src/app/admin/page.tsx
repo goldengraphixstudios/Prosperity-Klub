@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Download } from "lucide-react";
 
 import { Container } from "@/components/container";
 import { FadeIn } from "@/components/motion";
@@ -23,6 +24,7 @@ type DashboardResponse = {
 };
 
 const sessionKey = "pk_admin_key";
+const PAGE_SIZE = 10;
 
 function formatDate(value: unknown) {
   if (typeof value !== "string") return "—";
@@ -31,61 +33,133 @@ function formatDate(value: unknown) {
   return date.toLocaleString("en-PH");
 }
 
+function cellDisplay(key: string, value: unknown): string {
+  if (key === "created_at" || key === "sent_at") return formatDate(value);
+  if (Array.isArray(value)) return value.join(", ");
+  if (typeof value === "object" && value !== null) return JSON.stringify(value);
+  return String(value ?? "—");
+}
+
+function exportCsv(filename: string, rows: Array<Record<string, unknown>>, columns: Array<{ key: string; label: string }>) {
+  const header = columns.map((c) => JSON.stringify(c.label)).join(",");
+  const body = rows
+    .map((row) =>
+      columns
+        .map((c) => JSON.stringify(cellDisplay(c.key, row[c.key])))
+        .join(",")
+    )
+    .join("\n");
+  const blob = new Blob([header + "\n" + body], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function TableBlock({
   title,
   rows,
   columns,
+  csvFilename,
 }: {
   title: string;
   rows: Array<Record<string, unknown>>;
   columns: Array<{ key: string; label: string }>;
+  csvFilename: string;
 }) {
+  const [page, setPage] = React.useState(0);
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const visible = rows.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+
   return (
     <Card className="border-brand-primary/10 bg-white/80">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between gap-4">
         <CardTitle className="text-base">{title}</CardTitle>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5 text-xs"
+          onClick={() => exportCsv(csvFilename, rows, columns)}
+          disabled={rows.length === 0}
+        >
+          <Download className="h-3.5 w-3.5" />
+          Export CSV
+        </Button>
       </CardHeader>
       <CardContent>
         {rows.length === 0 ? (
           <p className="text-sm text-brand-muted">No records yet.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-[860px] w-full text-left text-sm">
-              <thead className="bg-white/90 text-xs uppercase tracking-[0.18em] text-brand-secondary">
-                <tr>
-                  {columns.map((column) => (
-                    <th key={column.key} className="px-3 py-2">
-                      {column.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row, index) => (
-                  <tr
-                    key={String(row.id ?? row.reference_id ?? index)}
-                    className="border-t border-brand-primary/10 align-top"
-                  >
-                    {columns.map((column) => {
-                      const value = row[column.key];
-                      const displayValue =
-                        column.key === "created_at" || column.key === "sent_at"
-                          ? formatDate(value)
-                          : Array.isArray(value)
-                            ? value.join(", ")
-                            : typeof value === "object" && value !== null
-                              ? JSON.stringify(value)
-                              : String(value ?? "—");
-                      return (
-                        <td key={column.key} className="px-3 py-3 text-brand-muted">
-                          {displayValue}
-                        </td>
-                      );
-                    })}
+          <div className="space-y-3">
+            <div className="overflow-x-auto">
+              <table className="min-w-[860px] w-full text-left text-sm">
+                <thead className="bg-white/90 text-xs uppercase tracking-[0.18em] text-brand-secondary">
+                  <tr>
+                    {columns.map((column) => (
+                      <th key={column.key} className="px-3 py-2">
+                        {column.label}
+                      </th>
+                    ))}
                   </tr>
+                </thead>
+                <tbody>
+                  {visible.map((row, index) => (
+                    <tr
+                      key={String(row.id ?? row.reference_id ?? index)}
+                      className="border-t border-brand-primary/10 align-top"
+                    >
+                      {columns.map((column) => (
+                        <td key={column.key} className="px-3 py-3 text-brand-muted">
+                          {cellDisplay(column.key, row[column.key])}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            <div className="flex items-center justify-between gap-3 text-xs text-brand-muted">
+              <span>
+                Showing {page * PAGE_SIZE + 1}–
+                {Math.min((page + 1) * PAGE_SIZE, rows.length)} of {rows.length}
+              </span>
+              <div className="flex gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  disabled={page === 0}
+                  className="rounded-md border border-brand-primary/15 px-2.5 py-1 transition hover:bg-brand-background disabled:opacity-40"
+                >
+                  ← Prev
+                </button>
+                {Array.from({ length: totalPages }).map((_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setPage(i)}
+                    className={`rounded-md border px-2.5 py-1 transition ${
+                      i === page
+                        ? "border-brand-primary bg-brand-primary text-white"
+                        : "border-brand-primary/15 hover:bg-brand-background"
+                    }`}
+                  >
+                    {i + 1}
+                  </button>
                 ))}
-              </tbody>
-            </table>
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                  disabled={page >= totalPages - 1}
+                  className="rounded-md border border-brand-primary/15 px-2.5 py-1 transition hover:bg-brand-background disabled:opacity-40"
+                >
+                  Next →
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </CardContent>
@@ -145,13 +219,8 @@ export default function AdminPage() {
     try {
       const response = await fetch("/api/admin/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username: username.trim(),
-          password,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: username.trim(), password }),
       });
 
       const data = (await response.json().catch(() => null)) as { error?: string } | null;
@@ -226,44 +295,28 @@ export default function AdminPage() {
         {dashboard ? (
           <>
             <FadeIn className="grid gap-4 md:grid-cols-4">
-              <Card className="border-brand-primary/10 bg-white/80">
-                <CardHeader>
-                  <CardTitle className="text-base">Leads</CardTitle>
-                </CardHeader>
-                <CardContent className="text-3xl font-semibold text-brand-primary">
-                  {dashboard.counts.leads}
-                </CardContent>
-              </Card>
-              <Card className="border-brand-primary/10 bg-white/80">
-                <CardHeader>
-                  <CardTitle className="text-base">Ebook Requests</CardTitle>
-                </CardHeader>
-                <CardContent className="text-3xl font-semibold text-brand-primary">
-                  {dashboard.counts.ebook_requests}
-                </CardContent>
-              </Card>
-              <Card className="border-brand-primary/10 bg-white/80">
-                <CardHeader>
-                  <CardTitle className="text-base">Full Access</CardTitle>
-                </CardHeader>
-                <CardContent className="text-3xl font-semibold text-brand-primary">
-                  {dashboard.counts.full_access_registrations}
-                </CardContent>
-              </Card>
-              <Card className="border-brand-primary/10 bg-white/80">
-                <CardHeader>
-                  <CardTitle className="text-base">Ipon Challenge</CardTitle>
-                </CardHeader>
-                <CardContent className="text-3xl font-semibold text-brand-primary">
-                  {dashboard.counts.ipon_challenge_registrations}
-                </CardContent>
-              </Card>
+              {[
+                { label: "Leads", count: dashboard.counts.leads },
+                { label: "Ebook Requests", count: dashboard.counts.ebook_requests },
+                { label: "Full Access", count: dashboard.counts.full_access_registrations },
+                { label: "Ipon Challenge", count: dashboard.counts.ipon_challenge_registrations },
+              ].map(({ label, count }) => (
+                <Card key={label} className="border-brand-primary/10 bg-white/80">
+                  <CardHeader>
+                    <CardTitle className="text-base">{label}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-3xl font-semibold text-brand-primary">
+                    {count}
+                  </CardContent>
+                </Card>
+              ))}
             </FadeIn>
 
             <FadeIn>
               <TableBlock
-                title="Latest Leads"
+                title="Leads"
                 rows={dashboard.leads}
+                csvFilename="pk-leads.csv"
                 columns={[
                   { key: "created_at", label: "Created" },
                   { key: "name", label: "Name" },
@@ -279,8 +332,9 @@ export default function AdminPage() {
 
             <FadeIn>
               <TableBlock
-                title="Latest Ebook Requests"
+                title="Ebook Requests"
                 rows={dashboard.ebook_requests}
+                csvFilename="pk-ebook-requests.csv"
                 columns={[
                   { key: "created_at", label: "Created" },
                   { key: "name", label: "Name" },
@@ -294,8 +348,9 @@ export default function AdminPage() {
 
             <FadeIn>
               <TableBlock
-                title="Latest Full Access Applications"
+                title="Full Access Applications"
                 rows={dashboard.full_access_registrations}
+                csvFilename="pk-full-access.csv"
                 columns={[
                   { key: "created_at", label: "Created" },
                   { key: "reference_id", label: "Reference" },
@@ -310,8 +365,9 @@ export default function AdminPage() {
 
             <FadeIn>
               <TableBlock
-                title="Latest Ipon Challenge Registrations"
+                title="Ipon Challenge Registrations"
                 rows={dashboard.ipon_challenge_registrations}
+                csvFilename="pk-ipon-challenge.csv"
                 columns={[
                   { key: "created_at", label: "Created" },
                   { key: "reference_id", label: "Reference" },

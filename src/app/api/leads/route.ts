@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 
+import { sendLeadConfirmation, sendLeadOwnerNotification } from "@/lib/email";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
 
 const highIncomePatterns = ["40k", "80k", "100k", "120k"];
@@ -135,6 +136,8 @@ export async function POST(request: Request) {
       typeof data.requested_resource === "string"
         ? data.requested_resource.trim()
         : null;
+    const phone = typeof data.phone === "string" ? data.phone.trim() || null : null;
+    const location = typeof data.location === "string" ? data.location.trim() || null : null;
 
     const tags = computeTags({
       priorities,
@@ -155,9 +158,8 @@ export async function POST(request: Request) {
       reference_id: randomUUID(),
       name,
       email,
-      phone: typeof data.phone === "string" ? data.phone.trim() || null : null,
-      location:
-        typeof data.location === "string" ? data.location.trim() || null : null,
+      phone,
+      location,
       is_ofw: isOfw,
       income_range: incomeRange,
       priorities,
@@ -173,6 +175,24 @@ export async function POST(request: Request) {
     if (error) {
       throw new Error(error.message);
     }
+
+    await Promise.allSettled([
+      sendLeadOwnerNotification({
+        name,
+        email,
+        phone,
+        location,
+        isOfw,
+        incomeRange,
+        priorities,
+        sourcePage,
+        requestedResource,
+        tags,
+        qualified,
+        recommendedFollowUp,
+      }),
+      sendLeadConfirmation({ to: email, name }),
+    ]);
 
     return NextResponse.json({ ok: true, stored: "supabase" });
   } catch (error) {

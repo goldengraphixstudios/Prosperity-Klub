@@ -5,6 +5,7 @@ import Script from "next/script";
 import "./globals.css";
 
 import { Footer } from "@/components/footer";
+import { FirstVisitPopup } from "@/components/first-visit-popup";
 import { Navbar } from "@/components/navbar";
 import { PageTransition } from "@/components/motion";
 import { SmoothScrollProvider } from "@/components/smooth-scroll-provider";
@@ -47,6 +48,7 @@ export default function RootLayout({
             <Navbar />
             <PageTransition>{children}</PageTransition>
             <Footer />
+            <FirstVisitPopup />
           </div>
         </SmoothScrollProvider>
         <Script id="tawk-to" strategy="afterInteractive">
