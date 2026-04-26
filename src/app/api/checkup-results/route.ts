@@ -43,7 +43,8 @@ export async function POST(request: Request) {
       throw new Error(error.message);
     }
 
-    await sendCheckupConfirmation({ to: email, name: displayName, score, tier });
+    // Fire email without blocking — email failure must not fail the form
+    void sendCheckupConfirmation({ to: email, name: displayName, score, tier }).catch(() => null);
 
     return NextResponse.json({ ok: true });
   } catch (error) {
