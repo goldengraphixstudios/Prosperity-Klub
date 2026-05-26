@@ -606,7 +606,7 @@ export default function MembershipPage() {
                     setActiveForm("full_access");
                     setFormError(null);
                     document.getElementById("registration")?.scrollIntoView({
-                      behavior: "smooth",
+                      behavior: "auto",
                       block: "start",
                     });
                   }}

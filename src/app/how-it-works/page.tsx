@@ -68,8 +68,6 @@ const funnelSteps = [
   },
 ];
 
-const ease = [0.22, 1, 0.36, 1] as const;
-
 export default function HowItWorksPage() {
   return (
     <div className="py-16">
@@ -148,10 +146,6 @@ export default function HowItWorksPage() {
           <div className="relative mx-auto max-w-6xl px-2 py-4">
             <motion.div
               className="absolute left-[23px] top-6 bottom-6 w-[3px] rounded-full bg-gradient-to-b from-brand-gold via-brand-primary to-brand-secondary md:left-1/2 md:-translate-x-1/2"
-              initial={{ scaleY: 0, opacity: 0.45 }}
-              whileInView={{ scaleY: 1, opacity: 1 }}
-              viewport={{ once: true, amount: 0.15 }}
-              transition={{ duration: 1.1, ease }}
               style={{ originY: 0 }}
             />
 
@@ -163,10 +157,6 @@ export default function HowItWorksPage() {
                 return (
                   <motion.div
                     key={step.title}
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, amount: 0.2 }}
-                    transition={{ duration: 0.6, ease, delay: index * 0.05 }}
                     className="relative grid gap-4 md:grid-cols-2 md:gap-10"
                   >
                     <div className={isEven ? "md:pr-12" : "md:order-2 md:pl-12"}>

@@ -1,19 +1,10 @@
 import { NextResponse } from "next/server";
 
-import { sendCheckupConfirmation } from "@/lib/email";
-import { getSupabaseServerClient } from "@/lib/supabase-server";
+import { insertEbookRequest } from "@/lib/crm-store";
+import { sendCheckupConfirmation, sendCheckupOwnerNotification } from "@/lib/email";
 
 export async function POST(request: Request) {
   try {
-    const supabase = getSupabaseServerClient();
-
-    if (!supabase) {
-      return NextResponse.json(
-        { error: "Supabase server configuration is missing." },
-        { status: 500 }
-      );
-    }
-
     const data = await request.json();
     const name = typeof data.name === "string" ? data.name.trim() : "";
     const email = typeof data.email === "string" ? data.email.trim() : "";
@@ -30,23 +21,31 @@ export async function POST(request: Request) {
     const displayName = name || "Financial Check-up User";
     const requestedResource = `Financial Check-up — ${score} YES (${data.tierLabel ?? tier})`;
 
-    const { error } = await supabase.from("ebook_requests").insert({
+    await insertEbookRequest({
       name: displayName,
       email,
-      source_page: "/resources/financial-checkup",
-      requested_resource: requestedResource,
-      status: "delivered",
-      delivery_method: "email",
+      sourcePage: "/resources/financial-checkup",
+      requestedResource,
+      status: "sent",
+      deliveryMethod: "email",
+      notes: {
+        score,
+        tier,
+      },
     });
 
-    if (error) {
-      throw new Error(error.message);
-    }
+    await Promise.allSettled([
+      sendCheckupConfirmation({ to: email, name: displayName, score, tier }),
+      sendCheckupOwnerNotification({
+        name: displayName,
+        email,
+        score,
+        tier,
+        tierLabel: typeof data.tierLabel === "string" ? data.tierLabel : tier,
+      }),
+    ]);
 
-    // Fire email without blocking — email failure must not fail the form
-    void sendCheckupConfirmation({ to: email, name: displayName, score, tier }).catch(() => null);
-
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, stored: "turso" });
   } catch (error) {
     return NextResponse.json(
       { error: (error as Error).message || "Unexpected error" },

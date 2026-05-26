@@ -1,19 +1,10 @@
 import { NextResponse } from "next/server";
 
+import { insertMembershipRegistration } from "@/lib/crm-store";
 import { sendMembershipConfirmation, sendMembershipOwnerNotification } from "@/lib/email";
-import { getSupabaseServerClient } from "@/lib/supabase-server";
 
 export async function POST(request: Request) {
   try {
-    const supabase = getSupabaseServerClient();
-
-    if (!supabase) {
-      return NextResponse.json(
-        { error: "Supabase server configuration is missing." },
-        { status: 500 }
-      );
-    }
-
     const data = await request.json();
 
     const requiredStringFields = [
@@ -56,22 +47,22 @@ export async function POST(request: Request) {
 
     const mobile = typeof data.mobile === "string" ? data.mobile.trim() || null : null;
 
-    const { error } = await supabase.from("ipon_challenge_registrations").insert({
-      reference_id: data.reference_id.trim(),
-      source_page: typeof data.source_page === "string" ? data.source_page : "/membership",
-      first_name: data.first_name.trim(),
-      middle_name: data.middle_name.trim(),
-      last_name: data.last_name.trim(),
+    await insertMembershipRegistration("ipon_challenge_registrations", {
+      referenceId: data.reference_id.trim(),
+      sourcePage: typeof data.source_page === "string" ? data.source_page : "/membership",
+      firstName: data.first_name.trim(),
+      middleName: data.middle_name.trim(),
+      lastName: data.last_name.trim(),
       gender: data.gender.trim(),
-      gender_other:
+      genderOther:
         typeof data.gender_other === "string" ? data.gender_other.trim() || null : null,
-      civil_status: data.civil_status.trim(),
-      civil_status_other:
+      civilStatus: data.civil_status.trim(),
+      civilStatusOther:
         typeof data.civil_status_other === "string"
           ? data.civil_status_other.trim() || null
           : null,
-      date_of_birth: data.date_of_birth.trim(),
-      place_of_birth: data.place_of_birth.trim(),
+      dateOfBirth: data.date_of_birth.trim(),
+      placeOfBirth: data.place_of_birth.trim(),
       age,
       weight: data.weight.trim(),
       height: data.height.trim(),
@@ -79,7 +70,6 @@ export async function POST(request: Request) {
       email: data.email.trim(),
       mobile,
       consent: true,
-      status: "new",
       notes:
         typeof data.notes === "object" && data.notes !== null
           ? data.notes
@@ -87,10 +77,6 @@ export async function POST(request: Request) {
               submitted_at: new Date().toISOString(),
             },
     });
-
-    if (error) {
-      throw new Error(error.message);
-    }
 
     await Promise.allSettled([
       sendMembershipConfirmation({
@@ -108,7 +94,7 @@ export async function POST(request: Request) {
       }),
     ]);
 
-    return NextResponse.json({ ok: true, stored: "supabase" });
+    return NextResponse.json({ ok: true, stored: "turso" });
   } catch (error) {
     return NextResponse.json(
       { error: (error as Error).message || "Unexpected error" },

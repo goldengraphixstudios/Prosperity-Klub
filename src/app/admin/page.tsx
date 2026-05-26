@@ -4,14 +4,18 @@ import * as React from "react";
 import {
   BookOpen,
   ChevronDown,
+  Copy,
   Download,
   FileText,
+  HeartPulse,
   LayoutDashboard,
   LogOut,
+  Mail,
   RefreshCw,
   Search,
   Shield,
   Star,
+  Trash2,
   Users,
   X,
 } from "lucide-react";
@@ -33,7 +37,13 @@ type DashboardData = {
 
 type Row = Record<string, unknown>;
 
-type Section = "overview" | "leads" | "ebook_requests" | "full_access" | "ipon_challenge";
+type Section =
+  | "overview"
+  | "leads"
+  | "ebook_requests"
+  | "financial_checkups"
+  | "full_access"
+  | "ipon_challenge";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -96,6 +106,16 @@ const COLS: Record<string, Col[]> = {
     { key: "delivery_method", label: "Delivery" },
     { key: "source_page", label: "Source" },
   ],
+  financial_checkups: [
+    { key: "created_at", label: "Date" },
+    { key: "name", label: "Name" },
+    { key: "email", label: "Email" },
+    { key: "requested_resource", label: "Result" },
+    { key: "status", label: "Status", badge: true },
+    { key: "delivery_method", label: "Delivery" },
+    { key: "source_page", label: "Source" },
+    { key: "notes", label: "Notes" },
+  ],
   full_access: [
     { key: "created_at", label: "Date" },
     { key: "reference_id", label: "Ref ID" },
@@ -132,7 +152,7 @@ function StatusBadge({ value }: { value: string }) {
   const v = String(value).toLowerCase();
   const cls =
     v === "new" ? "bg-blue-100 text-blue-700" :
-    v === "delivered" ? "bg-emerald-100 text-emerald-700" :
+    v === "delivered" || v === "sent" ? "bg-emerald-100 text-emerald-700" :
     v === "pending" ? "bg-amber-100 text-amber-800" :
     v === "true" || v === "yes" ? "bg-emerald-100 text-emerald-700" :
     v === "false" || v === "no" ? "bg-slate-100 text-slate-500" :
@@ -140,16 +160,38 @@ function StatusBadge({ value }: { value: string }) {
   return <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${cls}`}>{value}</span>;
 }
 
-function DataTable({ rows, cols, csvName }: { rows: Row[]; cols: Col[]; csvName: string }) {
+function DataTable({
+  rows,
+  cols,
+  csvName,
+  onDelete,
+  deletingId,
+}: {
+  rows: Row[];
+  cols: Col[];
+  csvName: string;
+  onDelete: (row: Row) => void;
+  deletingId: string | null;
+}) {
   const [query, setQuery] = React.useState("");
   const [page, setPage] = React.useState(0);
   const [expandedRow, setExpandedRow] = React.useState<number | null>(null);
+  const [copiedId, setCopiedId] = React.useState<string | null>(null);
 
   const filtered = React.useMemo(() => rows.filter((r) => rowSearch(r, query)), [rows, query]);
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const visible = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   React.useEffect(() => setPage(0), [query]);
+
+  const copyEmail = async (row: Row) => {
+    const email = typeof row.email === "string" ? row.email : "";
+    const id = typeof row.id === "string" ? row.id : "";
+    if (!email || !navigator?.clipboard) return;
+    await navigator.clipboard.writeText(email);
+    setCopiedId(id);
+    window.setTimeout(() => setCopiedId((current) => (current === id ? null : current)), 1500);
+  };
 
   return (
     <div className="flex flex-col gap-3">
@@ -198,6 +240,7 @@ function DataTable({ rows, cols, csvName }: { rows: Row[]; cols: Col[]; csvName:
                   </th>
                 ))}
                 {cols.length > 6 && <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500">More</th>}
+                <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -225,10 +268,43 @@ function DataTable({ rows, cols, csvName }: { rows: Row[]; cols: Col[]; csvName:
                           </button>
                         </td>
                       )}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1.5">
+                          {typeof row.email === "string" && row.email ? (
+                            <>
+                              <button
+                                onClick={() => void copyEmail(row)}
+                                className="rounded-md border border-slate-200 p-1.5 text-slate-500 transition hover:bg-white hover:text-slate-700"
+                                title="Copy email"
+                              >
+                                <Copy className="h-3.5 w-3.5" />
+                              </button>
+                              <a
+                                href={`mailto:${row.email}`}
+                                className="rounded-md border border-slate-200 p-1.5 text-slate-500 transition hover:bg-white hover:text-slate-700"
+                                title="Email record"
+                              >
+                                <Mail className="h-3.5 w-3.5" />
+                              </a>
+                            </>
+                          ) : null}
+                          <button
+                            onClick={() => onDelete(row)}
+                            disabled={deletingId === String(row.id ?? "")}
+                            className="rounded-md border border-red-200 p-1.5 text-red-500 transition hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
+                            title="Delete record"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                        {copiedId === String(row.id ?? "") ? (
+                          <p className="mt-1 text-[10px] text-emerald-600">Copied</p>
+                        ) : null}
+                      </td>
                     </tr>
                     {isExpanded && (
                       <tr className="bg-[#f8faff]">
-                        <td colSpan={7} className="px-4 py-4">
+                        <td colSpan={8} className="px-4 py-4">
                           <div className="grid grid-cols-2 gap-x-8 gap-y-2 md:grid-cols-3 lg:grid-cols-4">
                             {cols.map((c) => (
                               <div key={c.key} className="space-y-0.5">
@@ -373,6 +449,7 @@ const NAV: { id: Section; label: string; icon: React.ElementType }[] = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
   { id: "leads", label: "Leads", icon: Users },
   { id: "ebook_requests", label: "Ebook Requests", icon: BookOpen },
+  { id: "financial_checkups", label: "Financial Check-ups", icon: HeartPulse },
   { id: "full_access", label: "Full Access", icon: Star },
   { id: "ipon_challenge", label: "Ipon Challenge", icon: FileText },
 ];
@@ -384,11 +461,29 @@ function Dashboard({ data, onLogout, onRefresh, refreshing }: {
   refreshing: boolean;
 }) {
   const [section, setSection] = React.useState<Section>("overview");
+  const [actionError, setActionError] = React.useState<string | null>(null);
+  const [actionMessage, setActionMessage] = React.useState<string | null>(null);
+  const [deletingId, setDeletingId] = React.useState<string | null>(null);
+  const financialCheckupRows = React.useMemo(
+    () =>
+      data.ebook_requests.filter(
+        (row) => String(row.source_page ?? "") === "/resources/financial-checkup"
+      ),
+    [data.ebook_requests]
+  );
+  const ebookOnlyRows = React.useMemo(
+    () =>
+      data.ebook_requests.filter(
+        (row) => String(row.source_page ?? "") !== "/resources/financial-checkup"
+      ),
+    [data.ebook_requests]
+  );
 
   const sectionRows: Record<Section, Row[]> = {
     overview: [],
     leads: data.leads,
-    ebook_requests: data.ebook_requests,
+    ebook_requests: ebookOnlyRows,
+    financial_checkups: financialCheckupRows,
     full_access: data.full_access_registrations,
     ipon_challenge: data.ipon_challenge_registrations,
   };
@@ -397,6 +492,7 @@ function Dashboard({ data, onLogout, onRefresh, refreshing }: {
     overview: [],
     leads: COLS.leads,
     ebook_requests: COLS.ebook_requests,
+    financial_checkups: COLS.financial_checkups,
     full_access: COLS.full_access,
     ipon_challenge: COLS.ipon_challenge,
   };
@@ -405,8 +501,59 @@ function Dashboard({ data, onLogout, onRefresh, refreshing }: {
     overview: "",
     leads: "pk-leads.csv",
     ebook_requests: "pk-ebook-requests.csv",
+    financial_checkups: "pk-financial-checkups.csv",
     full_access: "pk-full-access.csv",
     ipon_challenge: "pk-ipon-challenge.csv",
+  };
+
+  const sectionTables: Record<Exclude<Section, "overview">, string> = {
+    leads: "leads",
+    ebook_requests: "ebook_requests",
+    financial_checkups: "ebook_requests",
+    full_access: "full_access_registrations",
+    ipon_challenge: "ipon_challenge_registrations",
+  };
+
+  const handleDelete = async (row: Row) => {
+    const id = typeof row.id === "string" ? row.id : "";
+    const table = section === "overview" ? null : sectionTables[section];
+    const label =
+      String(
+        row.name ??
+          (row.first_name ? `${row.first_name} ${row.last_name ?? ""}` : row.reference_id ?? id)
+      ).trim() || id;
+
+    if (!id || !table) {
+      setActionError("This record cannot be deleted.");
+      return;
+    }
+
+    if (!window.confirm(`Delete this record?\n\n${label}`)) {
+      return;
+    }
+
+    setActionError(null);
+    setActionMessage(null);
+    setDeletingId(id);
+
+    try {
+      const response = await fetch("/api/admin/records", {
+        method: "DELETE",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ table, id }),
+      });
+      const data = (await response.json().catch(() => null)) as { error?: string } | null;
+      if (!response.ok) {
+        throw new Error(data?.error || "Unable to delete record.");
+      }
+      setActionMessage("Record deleted.");
+      onRefresh();
+    } catch (error) {
+      setActionError((error as Error).message);
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   return (
@@ -429,7 +576,8 @@ function Dashboard({ data, onLogout, onRefresh, refreshing }: {
           {NAV.map(({ id, label, icon: Icon }) => {
             const count =
               id === "leads" ? data.counts.leads :
-              id === "ebook_requests" ? data.counts.ebook_requests :
+              id === "ebook_requests" ? ebookOnlyRows.length :
+              id === "financial_checkups" ? financialCheckupRows.length :
               id === "full_access" ? data.counts.full_access_registrations :
               id === "ipon_challenge" ? data.counts.ipon_challenge_registrations : null;
 
@@ -493,24 +641,36 @@ function Dashboard({ data, onLogout, onRefresh, refreshing }: {
           </div>
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-xs text-slate-500">Connected to Supabase</span>
+            <span className="text-xs text-slate-500">Connected to Turso</span>
           </div>
         </div>
 
         <div className="px-8 py-6 space-y-6">
+          {(actionError || actionMessage) && (
+            <div
+              className={`rounded-xl border px-4 py-3 text-sm ${
+                actionError
+                  ? "border-red-200 bg-red-50 text-red-700"
+                  : "border-emerald-200 bg-emerald-50 text-emerald-700"
+              }`}
+            >
+              {actionError ?? actionMessage}
+            </div>
+          )}
           {/* Overview */}
           {section === "overview" && (
             <>
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <StatCard icon={Users} label="Total Leads" count={data.counts.leads} color="bg-[#1a3679]" />
-                <StatCard icon={BookOpen} label="Ebook Requests" count={data.counts.ebook_requests} color="bg-[#b38124]" />
+                <StatCard icon={BookOpen} label="Ebook Requests" count={ebookOnlyRows.length} color="bg-[#b38124]" />
+                <StatCard icon={HeartPulse} label="Financial Check-ups" count={financialCheckupRows.length} color="bg-rose-600" />
                 <StatCard icon={Star} label="Full Access Applications" count={data.counts.full_access_registrations} color="bg-emerald-600" />
                 <StatCard icon={FileText} label="Ipon Challenge Registrations" count={data.counts.ipon_challenge_registrations} color="bg-violet-600" />
               </div>
 
               {/* Recent activity across all tables */}
               <div className="grid gap-6 lg:grid-cols-2">
-                {(["leads", "ebook_requests", "full_access", "ipon_challenge"] as Section[]).map((id) => {
+                {(["leads", "ebook_requests", "financial_checkups", "full_access", "ipon_challenge"] as Section[]).map((id) => {
                   const rows = sectionRows[id].slice(0, 5);
                   const label = NAV.find((n) => n.id === id)!.label;
                   return (
@@ -554,6 +714,8 @@ function Dashboard({ data, onLogout, onRefresh, refreshing }: {
               rows={sectionRows[section]}
               cols={sectionCols[section]}
               csvName={csvNames[section]}
+              onDelete={handleDelete}
+              deletingId={deletingId}
             />
           )}
         </div>

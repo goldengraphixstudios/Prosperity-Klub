@@ -1,8 +1,8 @@
 import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 
+import { insertLead } from "@/lib/crm-store";
 import { sendLeadConfirmation, sendLeadOwnerNotification } from "@/lib/email";
-import { getSupabaseServerClient } from "@/lib/supabase-server";
 
 const highIncomePatterns = ["40k", "80k", "100k", "120k"];
 
@@ -103,15 +103,6 @@ function computeFollowUp({
 
 export async function POST(request: Request) {
   try {
-    const supabase = getSupabaseServerClient();
-
-    if (!supabase) {
-      return NextResponse.json(
-        { error: "Supabase server configuration is missing." },
-        { status: 500 }
-      );
-    }
-
     const data = await request.json();
     const name = typeof data.name === "string" ? data.name.trim() : "";
     const email = typeof data.email === "string" ? data.email.trim() : "";
@@ -154,27 +145,23 @@ export async function POST(request: Request) {
       requestedResource,
     });
 
-    const { error } = await supabase.from("leads").insert({
-      reference_id: randomUUID(),
+    const referenceId = randomUUID();
+
+    await insertLead({
+      referenceId,
       name,
       email,
       phone,
       location,
-      is_ofw: isOfw,
-      income_range: incomeRange,
+      isOfw,
+      incomeRange,
       priorities,
       tags,
-      is_qualified: qualified,
-      source_page: sourcePage,
-      requested_resource: requestedResource,
-      recommended_follow_up: recommendedFollowUp,
-      status: "new",
-      notes: {},
+      qualified,
+      sourcePage,
+      requestedResource,
+      recommendedFollowUp,
     });
-
-    if (error) {
-      throw new Error(error.message);
-    }
 
     await Promise.allSettled([
       sendLeadOwnerNotification({
@@ -194,7 +181,7 @@ export async function POST(request: Request) {
       sendLeadConfirmation({ to: email, name }),
     ]);
 
-    return NextResponse.json({ ok: true, stored: "supabase" });
+    return NextResponse.json({ ok: true, stored: "turso" });
   } catch (error) {
     return NextResponse.json(
       { error: (error as Error).message || "Unexpected error" },

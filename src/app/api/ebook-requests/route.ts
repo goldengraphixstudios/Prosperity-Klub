@@ -1,19 +1,10 @@
 import { NextResponse } from "next/server";
 
+import { insertEbookRequest } from "@/lib/crm-store";
 import { sendEbookDelivery, sendEbookOwnerNotification } from "@/lib/email";
-import { getSupabaseServerClient } from "@/lib/supabase-server";
 
 export async function POST(request: Request) {
   try {
-    const supabase = getSupabaseServerClient();
-
-    if (!supabase) {
-      return NextResponse.json(
-        { error: "Supabase server configuration is missing." },
-        { status: 500 }
-      );
-    }
-
     const data = await request.json();
     const name = typeof data.name === "string" ? data.name.trim() : "";
     const email = typeof data.email === "string" ? data.email.trim() : "";
@@ -32,18 +23,15 @@ export async function POST(request: Request) {
         ? data.requested_resource
         : "The Secret to Saving and Building Your Future";
 
-    const { error } = await supabase.from("ebook_requests").insert({
+    await insertEbookRequest({
       name,
       email,
-      source_page: sourcePage,
-      requested_resource: requestedResource,
-      status: "delivered",
-      delivery_method: "email",
+      sourcePage,
+      requestedResource,
+      status: "sent",
+      deliveryMethod: "email",
+      notes: { delivered_by: "resend" },
     });
-
-    if (error) {
-      throw new Error(error.message);
-    }
 
     // Send emails concurrently — don't block response on failure
     await Promise.allSettled([
@@ -51,7 +39,7 @@ export async function POST(request: Request) {
       sendEbookOwnerNotification({ name, email, requestedResource, sourcePage }),
     ]);
 
-    return NextResponse.json({ ok: true, stored: "supabase" });
+    return NextResponse.json({ ok: true, stored: "turso" });
   } catch (error) {
     return NextResponse.json(
       { error: (error as Error).message || "Unexpected error" },

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { AnimatePresence, motion, type HTMLMotionProps } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
@@ -30,53 +30,28 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
 export function FadeIn({
   children,
   className,
-  delay = 0,
   ...props
 }: {
   children: React.ReactNode;
   className?: string;
   delay?: number;
-} & Omit<HTMLMotionProps<"div">, "children" | "className">) {
+} & Omit<React.HTMLAttributes<HTMLDivElement>, "children" | "className">) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 18 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: easeOut, delay }}
-      viewport={{ once: true, amount: 0.01, margin: "0px 0px -22% 0px" }}
-      className={cn(className)}
-      {...props}
-    >
+    <div className={cn(className)} {...props}>
       {children}
-    </motion.div>
+    </div>
   );
 }
 
 export function Stagger({
   children,
   className,
-  delay = 0,
 }: {
   children: React.ReactNode;
   className?: string;
   delay?: number;
 }) {
-  return (
-    <motion.div
-      initial="hidden"
-      whileInView="show"
-      viewport={{ once: true, amount: 0.01, margin: "0px 0px -22% 0px" }}
-      variants={{
-        hidden: { opacity: 0 },
-        show: {
-          opacity: 1,
-          transition: { staggerChildren: 0.12, delayChildren: delay },
-        },
-      }}
-      className={cn(className)}
-    >
-      {children}
-    </motion.div>
-  );
+  return <div className={cn(className)}>{children}</div>;
 }
 
 export const staggerItem = {
@@ -91,9 +66,5 @@ export function StaggerItem({
   children: React.ReactNode;
   className?: string;
 }) {
-  return (
-    <motion.div variants={staggerItem} className={cn(className)}>
-      {children}
-    </motion.div>
-  );
+  return <div className={cn(className)}>{children}</div>;
 }

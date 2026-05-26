@@ -30,7 +30,7 @@ export default function MembershipSubmissionsPage() {
             <CardContent className="space-y-4 text-sm text-brand-muted">
               <p>
                 Membership registrations now submit through the app backend into
-                Supabase instead of staying in local browser storage.
+                Turso instead of staying in local browser storage.
               </p>
               <p>
                 Use the admin dashboard to review live leads, ebook requests, and

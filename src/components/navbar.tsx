@@ -48,6 +48,7 @@ export function Navbar() {
   const joinRef = React.useRef<HTMLDivElement>(null);
 
   const calculators = [
+    { label: "Financial Check-up", href: "/resources/financial-checkup" },
     { label: "Debt Strategies Calculator", href: "/debt-strategies" },
     { label: "Savings Calculator", href: "/savings-calculator" },
   ];

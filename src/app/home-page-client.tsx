@@ -6,16 +6,14 @@ import {
   ArrowRight,
   BriefcaseBusiness,
   Compass,
-  ExternalLink,
   GraduationCap,
   Handshake,
-  PlayCircle,
   ShieldCheck,
   TrendingUp,
   Users,
   Waypoints,
 } from "lucide-react";
-import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { motion } from "framer-motion";
 
 import { Container } from "@/components/container";
 import { FadeIn, Stagger, StaggerItem } from "@/components/motion";
@@ -207,17 +205,12 @@ const faqs = [
 ];
 
 export default function HomePage() {
-  const { scrollY } = useScroll();
-  const prefersReducedMotion = useReducedMotion();
-  const blobY = useTransform(scrollY, [0, 500], [0, prefersReducedMotion ? 0 : 40]);
-
   return (
     <div>
       <section className="relative overflow-hidden pb-16 pt-14">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(148,166,207,0.35),_transparent_55%)]" />
         <motion.div
           className="absolute right-0 top-6 h-56 w-56 rounded-full bg-brand-gold/10"
-          style={{ y: blobY }}
         />
 
         <Container className="relative">
@@ -439,10 +432,6 @@ export default function HomePage() {
               <motion.div
                 className="absolute left-8 top-8 hidden h-1 rounded-full bg-gradient-to-r from-brand-gold via-brand-primary to-brand-secondary md:block"
                 style={{ width: "calc(100% - 4rem)" }}
-                initial={{ scaleX: 0, opacity: 0.4 }}
-                whileInView={{ scaleX: 1, opacity: 1 }}
-                transition={{ duration: 1.1, ease: "easeOut" }}
-                viewport={{ once: true, amount: 0.4 }}
               />
 
               <div className="absolute inset-x-8 top-0 hidden md:flex items-start justify-between">
@@ -555,31 +544,21 @@ export default function HomePage() {
                   <StaggerItem key={story.videoId}>
                     <Card className="h-full border-brand-primary/10 bg-white/85">
                       <CardContent className="space-y-4 p-4">
-                        <a
-                          href={story.sourceUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="group block overflow-hidden rounded-2xl border border-brand-primary/10"
-                        >
-                          <div className="relative aspect-video overflow-hidden bg-brand-primary">
-                            <Image
-                              src={`https://i.ytimg.com/vi/${story.videoId}/hqdefault.jpg`}
-                              alt={story.title}
-                              fill
-                              unoptimized
-                              className="object-cover transition duration-300 group-hover:scale-[1.03]"
+                        <div className="overflow-hidden rounded-2xl border border-brand-primary/10 bg-brand-primary">
+                          <div className="aspect-video">
+                            <iframe
+                              src={`https://www.youtube.com/embed/${story.videoId}`}
+                              title={story.title}
+                              className="h-full w-full"
+                              loading="lazy"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                              referrerPolicy="strict-origin-when-cross-origin"
+                              allowFullScreen
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/15 to-transparent" />
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/92 text-brand-primary shadow-lg">
-                                <PlayCircle className="h-8 w-8" />
-                              </div>
-                            </div>
                           </div>
-                        </a>
+                        </div>
                         <div className="space-y-2">
                           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-brand-secondary">
-                            <PlayCircle className="h-4 w-4" />
                             <span>Success Story</span>
                           </div>
                           <h3 className="text-lg font-semibold text-brand-primary">
@@ -592,8 +571,7 @@ export default function HomePage() {
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-2 text-sm font-semibold text-brand-primary transition hover:text-brand-gold"
                           >
-                            Watch story
-                            <ExternalLink className="h-4 w-4" />
+                            Open on YouTube
                           </a>
                         </div>
                       </CardContent>
