@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { Clock, BookOpen, ArrowRight, Tag } from "lucide-react";
-import { Navbar } from "@/components/navbar";
-import { Footer } from "@/components/footer";
 import { getAllStaticBlogPosts } from "@/lib/blogPosts";
 import { listPublishedBlogPosts } from "@/lib/blog-store";
 import { cmsRowToBlogPost } from "@/lib/cmsPostTypes";
@@ -72,7 +70,6 @@ export default async function BlogPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <Navbar />
       <main>
         {/* Hero */}
         <section className="bg-brand-primary py-16 sm:py-20">
@@ -212,7 +209,6 @@ export default async function BlogPage() {
           </div>
         </section>
       </main>
-      <Footer />
     </>
   );
 }

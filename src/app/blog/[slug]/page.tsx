@@ -3,8 +3,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Clock, Calendar, ArrowLeft, CheckCircle, ChevronDown } from "lucide-react";
-import { Navbar } from "@/components/navbar";
-import { Footer } from "@/components/footer";
 import { getAllStaticBlogPosts, getStaticBlogPost } from "@/lib/blogPosts";
 import { getBlogPostBySlug } from "@/lib/blog-store";
 import { cmsRowToBlogPost } from "@/lib/cmsPostTypes";
@@ -147,7 +145,6 @@ export default async function BlogPostPage({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
         />
       )}
-      <Navbar />
       <main>
         {/* Article header */}
         <header className="relative overflow-hidden bg-brand-primary">
@@ -422,7 +419,6 @@ export default async function BlogPostPage({
           </div>
         </div>
       </main>
-      <Footer />
     </>
   );
 }
