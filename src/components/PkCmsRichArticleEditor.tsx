@@ -271,8 +271,7 @@ export default function PkCmsRichArticleEditor({ sections, onChange }: Props) {
     },
     editorProps: {
       attributes: {
-        class:
-          "pk-rich-editor min-h-[520px] bg-white p-6 text-slate-950 outline-none",
+        class: "pk-rich-editor",
       },
     },
   });
@@ -321,7 +320,9 @@ export default function PkCmsRichArticleEditor({ sections, onChange }: Props) {
           expanded ? "flex-1 overflow-y-auto" : "max-h-[720px] overflow-y-auto"
         }
       >
-        <EditorContent editor={editor} />
+        <div className="pk-editor-wrap">
+          <EditorContent editor={editor} />
+        </div>
       </div>
     </div>
   );

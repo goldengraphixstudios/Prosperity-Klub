@@ -52,6 +52,80 @@ p {
   line-height: 1.7;
 }
 
+/* ─── Tiptap / ProseMirror editor ──────────────────────────────────────── */
+.pk-editor-wrap .ProseMirror {
+  min-height: 520px;
+  padding: 1.5rem;
+  background: #ffffff;
+  color: #0f172a;
+  outline: none;
+  font-size: 0.9375rem;
+  line-height: 1.75;
+}
+
+.pk-editor-wrap .ProseMirror p {
+  margin: 0 0 0.75rem;
+}
+
+.pk-editor-wrap .ProseMirror h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 1.5rem 0 0.5rem;
+  color: #0f172a;
+}
+
+.pk-editor-wrap .ProseMirror ul {
+  list-style: disc;
+  padding-left: 1.5rem;
+  margin: 0.5rem 0 0.75rem;
+}
+
+.pk-editor-wrap .ProseMirror ol {
+  list-style: decimal;
+  padding-left: 1.5rem;
+  margin: 0.5rem 0 0.75rem;
+}
+
+.pk-editor-wrap .ProseMirror li {
+  margin-bottom: 0.25rem;
+}
+
+.pk-editor-wrap .ProseMirror blockquote {
+  border-left: 3px solid #b38124;
+  padding-left: 1rem;
+  margin: 1rem 0;
+  font-style: italic;
+  color: #475569;
+}
+
+.pk-editor-wrap .ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 0.5rem 0;
+}
+
+.pk-editor-wrap .ProseMirror a {
+  color: #1a3679;
+  text-decoration: underline;
+}
+
+.pk-editor-wrap .ProseMirror strong {
+  font-weight: 700;
+}
+
+.pk-editor-wrap .ProseMirror em {
+  font-style: italic;
+}
+
+.pk-editor-wrap .ProseMirror p.is-editor-empty:first-child::before {
+  color: #94a3b8;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
 @keyframes accordion-down {
   from {
     height: 0;
