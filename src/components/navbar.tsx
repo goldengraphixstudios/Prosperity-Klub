@@ -67,7 +67,7 @@ export function Navbar() {
     },
   } as const;
   const primaryNav = siteConfig.nav.filter(
-    (item) => item.label !== "Resources" && item.label !== "Membership"
+    (item) => item.label !== "Resources" && item.label !== "Membership" && item.label !== "Blog"
   );
   const joinLinks = [
     {
@@ -192,6 +192,12 @@ export function Navbar() {
               {item.label}
             </Link>
           ))}
+          <Link
+            href="/blog"
+            className={cn(linkBase, isActive("/blog") && "text-brand-primary after:scale-x-100")}
+          >
+            Blog
+          </Link>
           <div
             className="relative"
             ref={resourcesRef}
@@ -416,6 +422,15 @@ export function Navbar() {
                 {item.label}
               </Link>
             ))}
+            <Link
+              href="/blog"
+              className={cn(
+                "rounded-lg px-3 py-2 text-sm font-semibold text-brand-primary transition-colors hover:bg-brand-primary/5",
+                isActive("/blog") && "bg-brand-primary/10"
+              )}
+            >
+              Blog
+            </Link>
 
             <Accordion
               type="single"

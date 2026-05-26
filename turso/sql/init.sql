@@ -93,3 +93,28 @@ CREATE TABLE IF NOT EXISTS ipon_challenge_registrations (
 
 CREATE INDEX IF NOT EXISTS ipon_challenge_registrations_created_at_idx ON ipon_challenge_registrations (created_at DESC);
 CREATE INDEX IF NOT EXISTS ipon_challenge_registrations_email_idx ON ipon_challenge_registrations (email);
+
+CREATE TABLE IF NOT EXISTS blog_posts (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  slug TEXT NOT NULL UNIQUE,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published')),
+  published_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  category TEXT NOT NULL DEFAULT 'Financial Education',
+  read_time TEXT NOT NULL DEFAULT '5 min read',
+  keywords TEXT NOT NULL DEFAULT '[]',
+  summary TEXT NOT NULL DEFAULT '',
+  deck TEXT NOT NULL DEFAULT '',
+  hero_image TEXT NOT NULL DEFAULT '{}',
+  takeaways TEXT NOT NULL DEFAULT '[]',
+  sections TEXT NOT NULL DEFAULT '[]',
+  faqs TEXT NOT NULL DEFAULT '[]',
+  cta TEXT NOT NULL DEFAULT '{}',
+  author_id TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS blog_posts_slug_idx ON blog_posts (slug);
+CREATE INDEX IF NOT EXISTS blog_posts_status_idx ON blog_posts (status);
+CREATE INDEX IF NOT EXISTS blog_posts_updated_at_idx ON blog_posts (updated_at DESC);

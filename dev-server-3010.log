@@ -1,0 +1,19 @@
+
+> prosperity-klub-site@0.1.0 dev
+> next dev --port 3010
+
+▲ Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:3010
+- Network:       http://192.168.1.13:3010
+- Environments: .env.local
+
+✓ Starting...
+✓ Ready in 1012ms
+ POST /api/admin/login 200 in 224ms (compile: 196ms, render: 28ms)
+ GET /api/admin/dashboard 200 in 227ms (compile: 207ms, render: 20ms)
+ GET / 200 in 1108ms (compile: 698ms, render: 411ms)
+  Reload env: .env.local
+✓ Compiled in 68ms
+ GET / 200 in 225ms (compile: 108ms, render: 117ms)
+  Reload env: .env.local
+✓ Compiled in 106ms

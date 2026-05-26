@@ -1,0 +1,61 @@
+# Dependencies
+node_modules/
+
+# Next.js build output
+.next/
+out/
+output/
+build/
+dist/
+
+# Coverage & type artifacts
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# Package manager debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Dev server logs
+dev-server.log
+dev-server.err.log
+
+# CI / deployment
+.vercel/
+.turbo/
+.github/
+
+# Git internals
+.git/
+
+# Env files (may contain secrets)
+.env*
+
+# Lock files (large, low signal)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Large binary / media assets
+public/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.ico
+*.webp
+*.pdf
+*.mp4
+*.mp3
+*.woff
+*.woff2
+*.ttf
+*.eot
+
+# Supabase generated / migrations (keep src-level logic, skip infra noise)
+supabase/.branches/
+supabase/.temp/

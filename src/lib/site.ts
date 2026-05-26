@@ -9,9 +9,11 @@ export const siteConfig = {
     { label: "Resources", href: "/resources" },
     { label: "Membership", href: "/membership" },
     { label: "Contact", href: "/contact" },
+    { label: "Blog", href: "/blog" },
   ],
   footerNav: [
     { label: "About", href: "/about" },
+    { label: "Blog", href: "/blog" },
     { label: "How It Works", href: "/how-it-works" },
     { label: "Resources", href: "/resources" },
     { label: "Tools", href: "/links" },
